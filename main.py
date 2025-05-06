@@ -306,7 +306,7 @@ def filter_data(filter: dict = Body(...)):
 
 
 @app.post("/api/verify_license")
-def verify_license(company_name: str = Form(...), mesaurer: str = Form(...), machine_name: str = Form(...), company_id: str = Form(...)):
+def verify_license(company_name: str = Form(...), measurer: str = Form(...), machine_name: str = Form(...), company_id: str = Form(...)):
     conn = cursor = None
     try:
         conn = get_connection()
@@ -326,7 +326,7 @@ def verify_license(company_name: str = Form(...), mesaurer: str = Form(...), mac
               AND c.measurer = %s
               AND cp.machine_serial_number = %s
             AND c.company_id_number = %s
-        """, (company_name, mesaurer, machine_name, company_id))
+        """, (company_name, measurer, machine_name, company_id))
 
         row = cursor.fetchone()
         if row:
