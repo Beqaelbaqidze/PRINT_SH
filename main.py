@@ -48,21 +48,25 @@ def root(request: Request):
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
     if not request.session.get("logged_in"):
+        # If the user is not logged in, redirect them to the login page
         return RedirectResponse("/login", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
+
 
 
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin1234":
-        request.session["logged_in"] = True
-        return {"success": True}
+        request.session["logged_in"] = True  # This line sets the session variable
+        return RedirectResponse("/dashboard", status_code=302)  # Redirect to dashboard after successful login
     raise HTTPException(status_code=401, detail="Invalid credentials")
+
 
 @app.get("/logout")
 def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse("/login", status_code=302)
+    request.session.clear()  # Clears the session
+    return RedirectResponse("/login", status_code=302)  # Redirects to the login page
+
 
 
 # === Models ===
