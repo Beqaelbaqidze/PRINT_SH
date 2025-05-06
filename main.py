@@ -1,7 +1,6 @@
 from binascii import Error
 from fastapi import FastAPI, HTTPException, Form, Request
 from pydantic import BaseModel
-import mysql.connector
 from typing import Optional
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,7 +46,8 @@ def create_tables_if_not_exist():
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
 
         # Create companies
         cursor.execute("""
@@ -133,7 +133,8 @@ def all_create(data: AllTablesCreate):
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("SELECT id FROM companies WHERE company_id_number = %s", (data.company_id_number,))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Company ID already exists.")
@@ -192,7 +193,8 @@ def all_update(data: AllTablesUpdate):
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("""
             UPDATE companies SET company_name=%s, mobile_number=%s, email=%s, director=%s, measurer=%s
             WHERE id=%s
@@ -228,7 +230,8 @@ def all_delete(company_id: int):
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("DELETE FROM companies WHERE id = %s", (company_id,))
         conn.commit()
         return {"message": "Deleted successfully."}
@@ -246,7 +249,8 @@ def get_all_data():
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
         cursor.execute("""
             SELECT
                 c.id AS company_id,
@@ -291,7 +295,8 @@ def filter_data(filter: dict = Body(...)):
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
 
         query = """
             SELECT
@@ -373,7 +378,8 @@ def verify_license(
     cursor = None
     try:
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
 
         cursor.execute("""
             SELECT 
