@@ -8,9 +8,13 @@ from datetime import date
 from decimal import Decimal
 import psycopg2
 import psycopg2.extras
+from starlette.middleware.sessions import SessionMiddleware
 
-# === App Setup ===
+
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
+
+
 
 # Static and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -43,13 +47,23 @@ def root(request: Request):
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/login", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+
 @app.post("/login")
-def login(username: str = Form(...), password: str = Form(...)):
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin1234":
-        return {"success": True, "message": "Login successful"}
+        request.session["logged_in"] = True
+        return {"success": True}
     raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", status_code=302)
+
 
 # === Models ===
 

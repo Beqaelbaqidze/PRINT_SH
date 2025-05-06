@@ -16,11 +16,21 @@
 
 <body>
     
-    <h2 style="text-align:center;">Company License Management</h2>
+    <div style="width: 90%; margin: 20px auto; display: flex; justify-content: space-between; align-items: center;">
+        <h2>Company License Management</h2>
+        <button onclick="logout()" style="padding: 6px 12px; background-color: crimson; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Logout
+        </button>
+    </div>
     
     <div id="jsGrid" style="width:90%;margin:auto;"></div>
 
     <script>
+         function logout() {
+            // If you store login data in local/session storage, clear it here
+            // localStorage.clear(); // or sessionStorage.clear();
+            window.location.href = "/login";
+        }
         $("#jsGrid").jsGrid({
             width: "100%",
             height: "auto",
