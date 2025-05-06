@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from datetime import date
 from decimal import Decimal
 from fastapi import Body
+import psycopg2
+import psycopg2.extras
 
 app = FastAPI()
 
@@ -28,7 +30,7 @@ app.add_middleware(
 
 # MySQL connection
 def get_connection():
-    return mysql.connector.connect(
+    return psycopg2.connect(
         host="localhost",
         port=5432,
         user="beqa",
