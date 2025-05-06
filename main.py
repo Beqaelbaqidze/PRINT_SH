@@ -49,12 +49,12 @@ def root(request: Request):
 def dashboard(request: Request):
     if not request.session.get("logged_in"):
         # If the user is not logged in, redirect them to the login page
-        return RedirectResponse("/login", status_code=302)
+        return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 
-@app.post("/login")
+@app.post("/")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin1234":
         request.session["logged_in"] = True  # This line sets the session variable
@@ -65,7 +65,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()  # Clears the session
-    return RedirectResponse("/login", status_code=302)  # Redirects to the login page
+    return RedirectResponse("/", status_code=302)  # Redirects to the login page
 
 
 
