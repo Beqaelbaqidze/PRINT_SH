@@ -1,3 +1,4 @@
+from urllib import request
 from fastapi import FastAPI, HTTPException, Form, Request, Body
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,25 +48,26 @@ def root(request: Request):
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
-    if not request.session.get("logged_in"):
-        # If the user is not logged in, redirect them to the login page
-        return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    if not request.session.get("logged_in"):  # If the user is not logged in, redirect to the login page
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("dashboard.html", {"request": request})  # Show the dashboard if logged in
 
 
 
-@app.post("/")
+
+@app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    # Hardcoded credentials for example; you should use a database or hashed passwords for production
     if username == "admin" and password == "admin1234":
-        request.session["logged_in"] = True  # This line sets the session variable
+        request.session["logged_in"] = True  # Store the login status in the session
         return RedirectResponse("/dashboard", status_code=302)  # Redirect to dashboard after successful login
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.get("/logout")
 def logout(request: Request):
-    request.session.clear()  # Clears the session
-    return RedirectResponse("/", status_code=302)  # Redirects to the login page
+    request.session.clear()  # Clear the session (i.e., log the user out)
+    return RedirectResponse("/login", status_code=302)  # Redirect to login page after logout
 
 
 
@@ -199,6 +201,8 @@ def all_delete(company_id: int):
 
 @app.get("/all/list")
 def get_all_data():
+    if not request.session.get("logged_in"):  # Check if the user is logged in
+        return RedirectResponse("/login", status_code=302)  # Redirect if not logged in
     conn = cursor = None
     try:
         conn = get_connection()
