@@ -323,7 +323,7 @@ def verify_license(company_name: str = Form(...), measurer: str = Form(...), mac
             JOIN computers cp ON cp.company_id = c.id
             JOIN licenses l ON l.computer_id = cp.id
             WHERE c.company_name = %s
-              AND c.measurer = %s
+              AND cp.measurer = %s
               AND cp.machine_serial_number = %s
             AND c.company_id_number = %s
         """, (company_name, measurer, machine_name, company_id))
