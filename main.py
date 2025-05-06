@@ -306,7 +306,12 @@ def filter_data(filter: dict = Body(...)):
 
 
 @app.post("/api/verify_license")
-def verify_license(company_name: str = Form(...), measurer: str = Form(...), machine_name: str = Form(...), company_id: str = Form(...)):
+def verify_license(
+    company_name: str = Form(...),
+    measurer: str = Form(...),
+    machine_name: str = Form(...),
+    company_id: str = Form(...)
+):
     conn = cursor = None
     try:
         conn = get_connection()
@@ -325,7 +330,7 @@ def verify_license(company_name: str = Form(...), measurer: str = Form(...), mac
             WHERE c.company_name = %s
               AND cp.measurer = %s
               AND cp.machine_serial_number = %s
-            AND c.company_id_number = %s
+              AND c.company_id_number = %s
         """, (company_name, measurer, machine_name, company_id))
 
         row = cursor.fetchone()
