@@ -38,63 +38,7 @@ def get_connection():
     )
 
 
-@app.on_event("startup")
-def create_tables_if_not_exist():
-    conn = None
-    cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-
-        # Create companies
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS companies (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                company_name VARCHAR(255) NOT NULL,
-                company_id_number VARCHAR(50) UNIQUE NOT NULL,
-                mobile_number VARCHAR(20),
-                email VARCHAR(255),
-                director VARCHAR(255),
-                measurer VARCHAR(255)
-            ) ENGINE=InnoDB;
-        """)
-
-        # Create computers
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS computers (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                machine_serial_number VARCHAR(100) UNIQUE NOT NULL,
-                measurer VARCHAR(255),
-                company_id INT NOT NULL,
-                FOREIGN KEY (company_id) REFERENCES companies(id)
-                    ON DELETE CASCADE
-            ) ENGINE=InnoDB;
-        """)
-
-        # Create licenses
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS licenses (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                computer_id INT NOT NULL,
-                price DECIMAL(10, 2) NOT NULL,
-                paid BOOLEAN DEFAULT FALSE,
-                expire_date DATE NOT NULL,
-                FOREIGN KEY (computer_id) REFERENCES computers(id)
-                    ON DELETE CASCADE
-            ) ENGINE=InnoDB;
-        """)
-
-        conn.commit()
-        print("✅ Tables checked/created successfully.")
-    except Error as e:
-        print("❌ Error creating tables:", e)
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-# Login route
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
