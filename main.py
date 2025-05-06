@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Form, Request, Body
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -306,7 +306,7 @@ def filter_data(filter: dict = Body(...)):
 
 
 @app.post("/api/verify_license")
-def verify_license(company_name: str = Form(...), email: str = Form(...), machine_name: str = Form(...)):
+def verify_license(company_name: str = Form(...), mesaurer: str = Form(...), machine_name: str = Form(...), company_id: str = Form(...)):
     conn = cursor = None
     try:
         conn = get_connection()
@@ -323,9 +323,10 @@ def verify_license(company_name: str = Form(...), email: str = Form(...), machin
             JOIN computers cp ON cp.company_id = c.id
             JOIN licenses l ON l.computer_id = cp.id
             WHERE c.company_name = %s
-              AND c.email = %s
+              AND c.measurer = %s
               AND cp.machine_serial_number = %s
-        """, (company_name, email, machine_name))
+            AND c.company_id_number = %s
+        """, (company_name, mesaurer, machine_name, company_id))
 
         row = cursor.fetchone()
         if row:
