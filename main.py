@@ -1,4 +1,3 @@
-from urllib import request
 from fastapi import Depends, FastAPI, HTTPException, Form, Request, Body
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +9,7 @@ from decimal import Decimal
 import psycopg2
 import psycopg2.extras
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi import Request
 
 
 app = FastAPI()
