@@ -93,14 +93,35 @@
     <h2>Register New License</h2>
     <form id="registerForm">
         <div class="form-group">
-            <input name="company_name" placeholder="Company Name" required>
+            <!-- Company -->
+            <label>Company:</label>
+            <select id="companySelect" name="company_name" required>
+                <option value="">-- Select company --</option>
+                <option value="__new__">+ Add new company</option>
+            </select>
+            <input id="companyInput" type="text" name="company_name_new" placeholder="New Company Name" style="display:none;">
             <input name="company_code" placeholder="Company Code" required>
             <input name="email" placeholder="Email">
             <input name="mobile" placeholder="Mobile">
             <input name="director" placeholder="Director">
-            <input name="operator_name" placeholder="Operator Name" required>
-            <input name="serial_number" placeholder="Serial Number" required>
 
+            <!-- Operator -->
+            <label>Operator:</label>
+            <select id="operatorSelect" name="operator_name" required>
+                <option value="">-- Select operator --</option>
+                <option value="__new__">+ Add new operator</option>
+            </select>
+            <input id="operatorInput" type="text" name="operator_name_new" placeholder="New Operator Name" style="display:none;">
+
+            <!-- Computer -->
+            <label>Computer:</label>
+            <select id="computerSelect" name="serial_number" required>
+                <option value="">-- Select computer --</option>
+                <option value="__new__">+ Add new computer</option>
+            </select>
+            <input id="computerInput" type="text" name="serial_number_new" placeholder="New Serial Number" style="display:none;">
+
+            <!-- Paid and Expiration -->
             <label for="paid">Paid:</label>
             <select name="paid" id="paid">
                 <option value="true">Yes</option>
@@ -109,14 +130,13 @@
 
             <label for="expire_date">Expire Date:</label>
             <input type="date" name="expire_date" required>
- 
         </div>
 
         <button type="submit">Register</button>
     </form>
 
     <script>
-        // Load records
+        // Load all records
         function loadRecords() {
             $.get("/api/records", function (data) {
                 let rows = "";
@@ -136,28 +156,76 @@
             });
         }
 
-        // Submit form
+        // Load dropdown options
+        function loadOptions() {
+            $.get("/api/companies", function (companies) {
+                companies.forEach(c => {
+                    $("#companySelect").append(`<option value="${c.name}">${c.name}</option>`);
+                });
+            });
+
+            $.get("/api/operators", function (operators) {
+                operators.forEach(o => {
+                    $("#operatorSelect").append(`<option value="${o.name}">${o.name}</option>`);
+                });
+            });
+
+            $.get("/api/computers", function (computers) {
+                computers.forEach(c => {
+                    $("#computerSelect").append(`<option value="${c.serial_number}">${c.serial_number}</option>`);
+                });
+            });
+        }
+
+        // Toggle input fields when selecting "+ Add new"
+        $("#companySelect").change(function () {
+            $("#companyInput").toggle($(this).val() === "__new__");
+        });
+
+        $("#operatorSelect").change(function () {
+            $("#operatorInput").toggle($(this).val() === "__new__");
+        });
+
+        $("#computerSelect").change(function () {
+            $("#computerInput").toggle($(this).val() === "__new__");
+        });
+
+        // Handle form submission
         $("#registerForm").on("submit", function (e) {
             e.preventDefault();
+
             const formData = Object.fromEntries(new FormData(this));
+
+            // Use new input if selected
+            formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
+            formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
+            formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
+
             formData.paid = formData.paid === "true";
+
+            delete formData.company_name_new;
+            delete formData.operator_name_new;
+            delete formData.serial_number_new;
+
             $.ajax({
                 url: "/api/register",
                 type: "POST",
                 contentType: "application/json",
                 data: JSON.stringify(formData),
                 success: function () {
-                    alert("Registration successful");
+                    alert("✅ Registration successful");
                     loadRecords();
                     $("#registerForm")[0].reset();
+                    $("#companyInput, #operatorInput, #computerInput").hide();
                 },
                 error: function (xhr) {
-                    alert("Error: " + xhr.responseJSON.detail);
+                    alert("❌ Error: " + xhr.responseJSON.detail);
                 }
             });
         });
 
-        loadRecords(); // Load on page load
+        loadOptions();
+        loadRecords();
     </script>
 
 </body>

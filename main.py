@@ -82,7 +82,7 @@ def get_records():
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
-        SELECT lr.id, * AS company, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status
+        SELECT lr.id, c.name  AS company, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status
         FROM license_records lr
         LEFT JOIN companies c ON lr.company_fk = c.id
         LEFT JOIN operators o ON lr.operator_fk = o.id
@@ -122,35 +122,50 @@ def register_license(data: LicenseRegistration):
         license_status = "active" if data.paid and data.expire_date > today else "inactive"
         status = "enabled" if license_status == "active" else "disabled"
 
-        # Insert into companies
-        cursor.execute("""
-            INSERT INTO companies (name, code, email, mobile, director)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id
-        """, (data.company_name, data.company_code, data.email, data.mobile, data.director))
-        company_id = cursor.fetchone()[0]
+        # --- Check or Insert Company ---
+        cursor.execute("SELECT id FROM companies WHERE name = %s OR code = %s", (data.company_name, data.company_code))
+        result = cursor.fetchone()
+        if result:
+            company_id = result[0]
+        else:
+            cursor.execute("""
+                INSERT INTO companies (name, code, email, mobile, director)
+                VALUES (%s, %s, %s, %s, %s) RETURNING id
+            """, (data.company_name, data.company_code, data.email, data.mobile, data.director))
+            company_id = cursor.fetchone()[0]
 
-        # Insert into operators
-        cursor.execute("""
-            INSERT INTO operators (name)
-            VALUES (%s) RETURNING id
-        """, (data.operator_name,))
-        operator_id = cursor.fetchone()[0]
+        # --- Check or Insert Operator ---
+        cursor.execute("SELECT id FROM operators WHERE name = %s", (data.operator_name,))
+        result = cursor.fetchone()
+        if result:
+            operator_id = result[0]
+        else:
+            cursor.execute("""
+                INSERT INTO operators (name)
+                VALUES (%s) RETURNING id
+            """, (data.operator_name,))
+            operator_id = cursor.fetchone()[0]
 
-        # Insert into computers
-        cursor.execute("""
-            INSERT INTO computers (serial_number)
-            VALUES (%s) RETURNING id
-        """, (data.serial_number,))
-        computer_id = cursor.fetchone()[0]
+        # --- Check or Insert Computer ---
+        cursor.execute("SELECT id FROM computers WHERE serial_number = %s", (data.serial_number,))
+        result = cursor.fetchone()
+        if result:
+            computer_id = result[0]
+        else:
+            cursor.execute("""
+                INSERT INTO computers (serial_number)
+                VALUES (%s) RETURNING id
+            """, (data.serial_number,))
+            computer_id = cursor.fetchone()[0]
 
-        # Insert into licenses
+        # --- Always Insert License (since it's unique per record) ---
         cursor.execute("""
             INSERT INTO licenses (paid, expire_date)
             VALUES (%s, %s) RETURNING id
         """, (data.paid, data.expire_date))
         license_id = cursor.fetchone()[0]
 
-        # Insert into main table with calculated status
+        # --- Insert into license_records ---
         cursor.execute("""
             INSERT INTO license_records (company_fk, operator_fk, computer_fk, license_fk, license_status, status)
             VALUES (%s, %s, %s, %s, %s, %s)
