@@ -39,17 +39,16 @@ def get_connection():
     )
 
 # ===== Routes =====
-
 @app.get("/", response_class=HTMLResponse)
-def root(request: Request):
+def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username == "admin" and password == "admin1234":
-        request.session["logged_in"] = True
-        return RedirectResponse("/dashboard", status_code=302)
+    if username == "admin" and password == "admin123":
+        request.session["user"] = username
+        return RedirectResponse(url="/dashboard", status_code=302)
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
@@ -58,12 +57,23 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/", status_code=302)
 
+# ----- DEPENDENCY -----
+def get_current_user(request: Request):
+    if not request.session.get("user"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return request.session["user"]
 
+# ----- PROTECTED ROUTES -----
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
-    if not request.session or not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+def dashboard(request: Request, user: str = Depends(get_current_user)):
+    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=302)
+
+
 
 
 # === Models ===
