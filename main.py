@@ -217,6 +217,7 @@ def verify_license(
                         return JSONResponse({
                             "valid": True,
                             "company_name": company.company_name,
+                            
                             "company_id": company.company_id,
                             "measurer": surveyor.name
                         })
