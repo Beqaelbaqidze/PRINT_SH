@@ -45,6 +45,12 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/")
 
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard_page(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
 # Unified Flat API Endpoint with Real Values
 @app.get("/api/all")
 def api_all(request: Request, db: Session = Depends(get_db)):
