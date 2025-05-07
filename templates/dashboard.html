@@ -65,6 +65,9 @@
 
 <script>
   let globalOptions = { companies: [], surveyors: [], computers: [] };
+  let selectedCompanyId = null;
+  let selectedSurveyorId = null;
+  let selectedComputerId = null;
 
   async function fetchOptions() {
     const res = await fetch('/api/options');
@@ -99,22 +102,23 @@
 
     companySelect.innerHTML = '<option value="">Select Company</option>';
     companies.forEach(c => companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+    if (selectedCompanyId) companySelect.value = selectedCompanyId;
 
-    companySelect.addEventListener('change', () => {
+    if (selectedCompanyId) {
       surveyorSelect.disabled = false;
-      const companyId = companySelect.value;
       surveyorSelect.innerHTML = '<option value="">Select Surveyor</option>';
-      surveyors.filter(s => s.company_id == companyId)
+      surveyors.filter(s => s.company_id == selectedCompanyId)
                .forEach(s => surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-    });
+      if (selectedSurveyorId) surveyorSelect.value = selectedSurveyorId;
+    }
 
-    surveyorSelect.addEventListener('change', () => {
+    if (selectedSurveyorId) {
       computerSelect.disabled = false;
-      const surveyorId = surveyorSelect.value;
       computerSelect.innerHTML = '<option value="">Select Computer</option>';
-      computers.filter(c => c.surveyor_id == surveyorId)
+      computers.filter(c => c.surveyor_id == selectedSurveyorId)
                .forEach(c => computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
-    });
+      if (selectedComputerId) computerSelect.value = selectedComputerId;
+    }
   }
 
   async function createCompany() {
@@ -125,24 +129,45 @@
     form.append('mobile_number', document.getElementById('newCompanyMobile').value);
     form.append('director', document.getElementById('newCompanyDirector').value);
     await fetch('/api/create/company', { method: 'POST', body: form });
+    selectedCompanyId = null;
     await populateFormSteps();
   }
 
   async function createSurveyor() {
+    selectedCompanyId = document.getElementById('companySelect').value;
     const form = new FormData();
     form.append('name', document.getElementById('newSurveyorName').value);
-    form.append('company_id', document.getElementById('companySelect').value);
+    form.append('company_id', selectedCompanyId);
     await fetch('/api/create/surveyor', { method: 'POST', body: form });
     await populateFormSteps();
   }
 
   async function createComputer() {
+    selectedCompanyId = document.getElementById('companySelect').value;
+    selectedSurveyorId = document.getElementById('surveyorSelect').value;
     const form = new FormData();
     form.append('serial_number', document.getElementById('newComputerSerial').value);
-    form.append('surveyor_id', document.getElementById('surveyorSelect').value);
+    form.append('surveyor_id', selectedSurveyorId);
     await fetch('/api/create/computer', { method: 'POST', body: form });
     await populateFormSteps();
   }
+
+  document.getElementById('companySelect').addEventListener('change', () => {
+    selectedCompanyId = document.getElementById('companySelect').value;
+    selectedSurveyorId = null;
+    selectedComputerId = null;
+    populateFormSteps();
+  });
+
+  document.getElementById('surveyorSelect').addEventListener('change', () => {
+    selectedSurveyorId = document.getElementById('surveyorSelect').value;
+    selectedComputerId = null;
+    populateFormSteps();
+  });
+
+  document.getElementById('computerSelect').addEventListener('change', () => {
+    selectedComputerId = document.getElementById('computerSelect').value;
+  });
 
   document.getElementById('licenseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
