@@ -214,16 +214,25 @@ def update_record(
         """, (paid, expire_date, record_id))
 
         # Update license_records status
+        # Final license status logic
+        if status == "disabled":
+            license_status = "inactive"
+        elif paid and expire_date >= today:
+            license_status = "active"
+        else:
+            license_status = "inactive"
+
         cursor.execute("""
             UPDATE license_records
             SET license_status = %s,
                 status = %s
             WHERE id = %s
         """, (
-            "active" if paid and expire_date >= today else "inactive",
+            license_status,
             status,
             record_id
         ))
+
 
         conn.commit()
         return {"message": "Updated successfully."}
