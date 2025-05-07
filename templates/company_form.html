@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if company else 'Add' }} Company{% endblock %}
+
+{% block content %}
+<h2>{{ 'Edit' if company else 'Add' }} Company</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label>Company Name</label>
+        <input type="text" name="company_name" class="form-control" value="{{ company.company_name if company else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Company ID</label>
+        <input type="text" name="company_id" class="form-control" value="{{ company.company_id if company else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control" value="{{ company.email if company else '' }}">
+    </div>
+    <div class="mb-3">
+        <label>Mobile</label>
+        <input type="text" name="mobile_number" class="form-control" value="{{ company.mobile_number if company else '' }}">
+    </div>
+    <div class="mb-3">
+        <label>Director</label>
+        <input type="text" name="director" class="form-control" value="{{ company.director if company else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}

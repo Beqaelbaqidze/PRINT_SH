@@ -1,67 +1,37 @@
-from fastapi import Depends, FastAPI, HTTPException, Form, Request, Body
-from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from datetime import date
-from decimal import Decimal
-import psycopg2
-import psycopg2.extras
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
+from database import SessionLocal, engine
+import models
+import datetime
+from fastapi import Path
+
+# Create tables
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-# app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
+app.add_middleware(SessionMiddleware, secret_key="supersecret")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ---------- Database Connection ----------
-def get_connection():
-    return psycopg2.connect(
-        host="localhost",
-        port=5432,
-        user="beqa",
-        password="1524Elbaqa",
-        database="licenses"
-    )
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="your_super_secret_key",  # Required
-    same_site="lax",                     # Important
-    https_only=False                     # Set to True ONLY if you are using HTTPS!
-)
-# ---------- Models ----------
-class AllTablesCreate(BaseModel):
-    company_name: str
-    company_id_number: str
-    mobile_number: str
-    email: str
-    director: str
-    measurer_company: str
-    machine_serial_number: str
-    measurer_computer: str
-    price: float
-    paid: bool
-    expire_date: str
+# Login Required
+def login_required(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
 
-class AllTablesUpdate(BaseModel):
-    company_id: int
-    company_name: str
-    mobile_number: str
-    email: str
-    director: str
-    measurer_company: str
-    computer_id: int
-    machine_serial_number: str
-    measurer_computer: str
-    license_id: int
-    price: float
-    paid: bool
-    expire_date: str
-
-# ---------- Auth Routes ----------
+# Routes
 @app.get("/", response_class=HTMLResponse)
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
@@ -70,275 +40,86 @@ def login_form(request: Request):
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin123":
         request.session["logged_in"] = True
-        return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Invalid login"})
-
+        return RedirectResponse("/dashboard", status_code=302)
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/")
-
-# -------- ADMIN PANEL --------
+    return RedirectResponse("/")
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def admin_panel(request: Request):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/")
-    return templates.TemplateResponse("dashboard.html", {"request": request})
-
-# ---------- CRUD ----------
-@app.post("/all/create")
-def all_create(request: Request, data: AllTablesCreate):
+def dashboard(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("logged_in"):
         return RedirectResponse("/", status_code=302)
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    companies = db.query(models.Company).all()
+    return templates.TemplateResponse("dashboard.html", {"request": request, "companies": companies})
 
-        cursor.execute("SELECT id FROM companies WHERE company_id_number = %s", (data.company_id_number,))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Company ID already exists.")
-        cursor.execute("SELECT id FROM computers WHERE machine_serial_number = %s", (data.machine_serial_number,))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Machine serial already exists.")
-
-        cursor.execute("""
-            INSERT INTO companies (company_name, company_id_number, mobile_number, email, director, measurer)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
-        """, (data.company_name, data.company_id_number, data.mobile_number, data.email, data.director, data.measurer_company))
-        company_id = cursor.fetchone()['id']
-
-        cursor.execute("""
-            INSERT INTO computers (machine_serial_number, measurer, company_id)
-            VALUES (%s, %s, %s) RETURNING id
-        """, (data.machine_serial_number, data.measurer_computer, company_id))
-        computer_id = cursor.fetchone()['id']
-
-        cursor.execute("""
-            INSERT INTO licenses (computer_id, price, paid, expire_date)
-            VALUES (%s, %s, %s, %s)
-        """, (computer_id, data.price, data.paid, data.expire_date))
-
-        conn.commit()
-        return {"message": "Inserted successfully."}
-    except Exception as e:
-        if conn: conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-@app.post("/all/update")
-def all_update(request: Request, data: AllTablesUpdate):
+# Example CRUD Route (Company list page)
+@app.get("/companies", response_class=HTMLResponse)
+def companies(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("logged_in"):
         return RedirectResponse("/", status_code=302)
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    companies = db.query(models.Company).all()
+    return templates.TemplateResponse("companies.html", {"request": request, "companies": companies})
 
-        cursor.execute("""
-            UPDATE companies SET company_name=%s, mobile_number=%s, email=%s, director=%s, measurer=%s
-            WHERE id=%s
-        """, (data.company_name, data.mobile_number, data.email, data.director, data.measurer_company, data.company_id))
-
-        cursor.execute("""
-            UPDATE computers SET machine_serial_number=%s, measurer=%s
-            WHERE id=%s
-        """, (data.machine_serial_number, data.measurer_computer, data.computer_id))
-
-        cursor.execute("""
-            UPDATE licenses SET price=%s, paid=%s, expire_date=%s
-            WHERE id=%s
-        """, (data.price, data.paid, data.expire_date, data.license_id))
-
-        conn.commit()
-        return {"message": "Updated successfully."}
-    except Exception as e:
-        if conn: conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-@app.delete("/all/delete/{company_id}")
-def all_delete(company_id: int, request: Request):
+@app.get("/companies/add", response_class=HTMLResponse)
+def add_company_form(request: Request):
     if not request.session.get("logged_in"):
         return RedirectResponse("/", status_code=302)
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("DELETE FROM companies WHERE id = %s", (company_id,))
-        conn.commit()
-        return {"message": "Deleted successfully."}
-    except Exception as e:
-        if conn: conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+    return templates.TemplateResponse("company_form.html", {"request": request, "company": None})
 
-@app.get("/all/list")
-def get_all_data(request: Request):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("""
-            SELECT
-                c.id AS company_id,
-                c.company_name,
-                c.company_id_number,
-                c.mobile_number,
-                c.email,
-                c.director,
-                c.measurer AS measurer_company,
-                cp.id AS computer_id,
-                cp.machine_serial_number,
-                cp.measurer AS measurer_computer,
-                l.id AS license_id,
-                l.price,
-                l.paid,
-                l.expire_date
-            FROM companies c
-            JOIN computers cp ON cp.company_id = c.id
-            JOIN licenses l ON l.computer_id = cp.id
-        """)
-        results = cursor.fetchall()
-        for row in results:
-            for key, value in row.items():
-                if isinstance(value, Decimal):
-                    row[key] = float(value)
-                elif isinstance(value, date):
-                    row[key] = value.isoformat()
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-@app.post("/all/filter")
-def filter_data(request: Request, filter: dict = Body(...)):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        query = """
-            SELECT
-                c.id AS company_id,
-                c.company_name,
-                c.company_id_number,
-                c.mobile_number,
-                c.email,
-                c.director,
-                c.measurer AS measurer_company,
-                cp.id AS computer_id,
-                cp.machine_serial_number,
-                cp.measurer AS measurer_computer,
-                l.id AS license_id,
-                l.price,
-                l.paid,
-                l.expire_date
-            FROM companies c
-            JOIN computers cp ON cp.company_id = c.id
-            JOIN licenses l ON l.computer_id = cp.id
-            WHERE 1=1
-        """
-        params = []
-        field_mapping = {
-            "company_name": "c.company_name",
-            "company_id_number": "c.company_id_number",
-            "mobile_number": "c.mobile_number",
-            "email": "c.email",
-            "director": "c.director",
-            "measurer_company": "c.measurer",
-            "machine_serial_number": "cp.machine_serial_number",
-            "measurer_computer": "cp.measurer",
-            "price": "l.price",
-            "paid": "l.paid",
-            "expire_date": "l.expire_date"
-        }
-
-        for key, db_field in field_mapping.items():
-            if key in filter and filter[key] not in [None, ""]:
-                if key in ["price", "paid"]:
-                    query += f" AND {db_field} = %s"
-                    params.append(filter[key])
-                elif key == "expire_date":
-                    query += f" AND DATE({db_field}) = %s"
-                    params.append(filter[key])
-                else:
-                    query += f" AND {db_field} ILIKE %s"
-                    params.append(f"%{filter[key]}%")
-
-        cursor.execute(query, params)
-        results = cursor.fetchall()
-        for row in results:
-            for key, value in row.items():
-                if isinstance(value, Decimal):
-                    row[key] = float(value)
-                elif isinstance(value, date):
-                    row[key] = value.isoformat()
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
-
-@app.post("/api/verify_license")
-def verify_license(
+@app.post("/companies/add")
+def add_company(
+    request: Request,
     company_name: str = Form(...),
-    measurer: str = Form(...),
-    machine_name: str = Form(...),
-    company_id: str = Form(...)
+    company_id: str = Form(...),
+    email: str = Form(None),
+    mobile_number: str = Form(None),
+    director: str = Form(None),
+    db: Session = Depends(get_db)
 ):
-    conn = cursor = None
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    new_company = models.Company(
+        company_name=company_name,
+        company_id=company_id,
+        email=email,
+        mobile_number=mobile_number,
+        director=director
+    )
+    db.add(new_company)
+    db.commit()
+    return RedirectResponse("/companies", status_code=302)
 
-        cursor.execute("""
-            SELECT 
-                c.id AS company_id,
-                c.company_name,
-                c.measurer,
-                l.paid,
-                l.expire_date
-            FROM companies c
-            JOIN computers cp ON cp.company_id = c.id
-            JOIN licenses l ON l.computer_id = cp.id
-            WHERE c.company_name = %s
-              AND cp.measurer = %s
-              AND cp.machine_serial_number = %s
-              AND c.company_id_number = %s
-        """, (company_name, measurer, machine_name, company_id))
+@app.get("/companies/edit/{company_id}", response_class=HTMLResponse)
+def edit_company_form(request: Request, company_id: int = Path(...), db: Session = Depends(get_db)):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
+    company = db.query(models.Company).filter_by(id=company_id).first()
+    return templates.TemplateResponse("company_form.html", {"request": request, "company": company})
 
-        row = cursor.fetchone()
-        if row:
-            today = date.today()
-            is_paid = row["paid"] == 1
-            not_expired = row["expire_date"] >= today
-            return {
-                "valid": is_paid and not_expired,
-                "company_name": row["company_name"],
-                "company_id": row["company_id"],
-                "measurer": row["measurer"],
-                "paid": bool(row["paid"]),
-                "expire_date": str(row["expire_date"])
-            }
-        return {"valid": False}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+@app.post("/companies/edit/{company_id}")
+def edit_company(
+    request: Request,
+    company_id: int = Path(...),
+    company_name: str = Form(...),
+    company_id_form: str = Form(...),
+    email: str = Form(None),
+    mobile_number: str = Form(None),
+    director: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    company = db.query(models.Company).filter_by(id=company_id).first()
+    company.company_name = company_name
+    company.company_id = company_id_form
+    company.email = email
+    company.mobile_number = mobile_number
+    company.director = director
+    db.commit()
+    return RedirectResponse("/companies", status_code=302)
+
+@app.get("/companies/delete/{company_id}")
+def delete_company(company_id: int, db: Session = Depends(get_db)):
+    company = db.query(models.Company).filter_by(id=company_id).first()
+    db.delete(company)
+    db.commit()
+    return RedirectResponse("/companies", status_code=302)

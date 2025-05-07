@@ -1,32 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
-  <!-- <script>
-    async function login() {
-      const formData = new FormData();
-      formData.append("username", document.getElementById("username").value);
-      formData.append("password", document.getElementById("password").value);
-
-      const response = await fetch("/login", {
-        method: "POST",
-        body: formData
-      });
-
-      if (response.ok) {
-        window.location.href = "/dashboard";
-      } else {
-        alert("Invalid login.");
-      }
-    }
-  </script> -->
+    <title>Login</title>
 </head>
 <body>
-  <h2>Login</h2>
-  <form method="post" action="/login">
-      <label>Username:</label><input type="text" name="username"><br>
-      <label>Password:</label><input type="password" name="password"><br>
-      <button type="submit">Login</button>
-  </form>
+    <h2>Admin Login</h2>
+    <form method="post" action="/login">
+        <label>Username:</label><input type="text" name="username"><br>
+        <label>Password:</label><input type="password" name="password"><br>
+        <input type="submit" value="Login">
+    </form>
 </body>
 </html>
