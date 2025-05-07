@@ -1,45 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Dashboard</title>
-  <script>
-    async function loadData() {
-      const response = await fetch("/all/list");
-      const data = await response.json();
 
-      const table = document.getElementById("dataTable");
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        for (const key in row) {
-          const td = document.createElement("td");
-          td.innerText = row[key];
-          tr.appendChild(td);
-        }
-        table.appendChild(tr);
-      });
-    }
-
-    window.onload = loadData;
-  </script>
-</head>
-<body>
-  <h2>Company License Dashboard</h2>
-  <a href="/logout">Logout</a>
-  <br><br>
-  <table border="1" id="dataTable">
-    <tr>
-      <th>Company Name</th>
-      <th>ID Number</th>
-      <th>Mobile</th>
-      <th>Email</th>
-      <th>Director</th>
-      <th>Measurer (Company)</th>
-      <th>Machine Serial</th>
-      <th>Measurer (Computer)</th>
-      <th>Price</th>
-      <th>Paid</th>
-      <th>Expire Date</th>
-    </tr>
-  </table>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block header %}Dashboard Overview{% endblock %}
+{% block content %}
+  <p>Welcome to the dashboard. Use the sidebar to manage data.</p>
+{% endblock %}

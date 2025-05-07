@@ -13,7 +13,8 @@ from fastapi import Path
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="supersecret")
+app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key", same_site="lax")
+
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

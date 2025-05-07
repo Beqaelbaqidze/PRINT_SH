@@ -1,38 +1,23 @@
+
 {% extends "base.html" %}
 {% block title %}Companies{% endblock %}
-
+{% block header %}Companies{% endblock %}
 {% block content %}
-<h2>Companies</h2>
-
-<a href="/companies/add" class="btn btn-success mb-3">+ Add Company</a>
-
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Company Name</th>
-            <th>Company ID</th>
-            <th>Email</th>
-            <th>Mobile</th>
-            <th>Director</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for company in companies %}
-        <tr>
-            <td>{{ company.id }}</td>
-            <td>{{ company.company_name }}</td>
-            <td>{{ company.company_id }}</td>
-            <td>{{ company.email }}</td>
-            <td>{{ company.mobile_number }}</td>
-            <td>{{ company.director }}</td>
-            <td>
-                <a href="/companies/edit/{{ company.id }}" class="btn btn-sm btn-primary">Edit</a>
-                <a href="/companies/delete/{{ company.id }}" class="btn btn-sm btn-danger">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
+<a href="/companies/add">Add New Company</a>
+<table border="1" cellpadding="8">
+  <tr><th>Name</th><th>ID</th><th>Email</th><th>Phone</th><th>Director</th><th>Actions</th></tr>
+  {% for c in companies %}
+    <tr>
+      <td>{{ c.company_name }}</td>
+      <td>{{ c.company_id }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.mobile_number }}</td>
+      <td>{{ c.director }}</td>
+      <td>
+        <a href="/companies/edit/{{ c.id }}">Edit</a> |
+        <a href="/companies/delete/{{ c.id }}">Delete</a>
+      </td>
+    </tr>
+  {% endfor %}
 </table>
 {% endblock %}
