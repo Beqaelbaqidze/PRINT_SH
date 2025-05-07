@@ -83,20 +83,33 @@ def api_all(request: Request, db: Session = Depends(get_db)):
 @app.get("/api/options")
 def get_options(request: Request, db: Session = Depends(get_db)):
     login_required(request)
+
+    # All companies
+    companies = [
+        {"id": c.id, "name": c.company_name, "company_id": c.company_id}
+        for c in db.query(models.Company).all()
+    ]
+
+    # All surveyors with mapped company_id
+    surveyors = []
+    for s in db.query(models.Surveyor).all():
+        for c in s.companies:
+            surveyors.append({
+                "id": s.id,
+                "name": s.name,
+                "company_id": c.id
+            })
+
+    # All computers
+    computers = [
+        {"id": c.id, "serial_number": c.serial_number, "surveyor_id": c.surveyor_id}
+        for c in db.query(models.Computer).all()
+    ]
+
     return JSONResponse({
-        "companies": [
-            {"id": c.id, "name": c.company_name, "company_id": c.company_id}
-            for c in db.query(models.Company).all()  # ✅ REMOVE .filter_by(temporary=True)
-        ],
-        "surveyors": [
-            {"id": s.id, "name": s.name, "company_id": assoc.company_id}
-            for s in db.query(models.Surveyor).all()
-            for assoc in s.companies
-        ],
-        "computers": [
-            {"id": c.id, "serial_number": c.serial_number, "surveyor_id": c.surveyor_id}
-            for c in db.query(models.Computer).all()
-        ]
+        "companies": companies,
+        "surveyors": surveyors,
+        "computers": computers
     })
 
 
