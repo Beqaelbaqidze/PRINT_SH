@@ -1,277 +1,100 @@
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, Path
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from starlette.middleware.sessions import SessionMiddleware
+from sqlalchemy import Column, String, Boolean, Date, create_engine, select
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from datetime import date
-import models
-from database import SessionLocal, engine
 
-# DB setup
-models.Base.metadata.create_all(bind=engine)
+# Database setup
+DATABASE_URL = "postgresql://beqa:1524Elbaqa@localhost:5432/licenses"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+# Table model
+class LicenseRegistry(Base):
+    __tablename__ = "license_registry"
+    company_name = Column(String, primary_key=True)
+    company_code = Column(String)
+    email = Column(String)
+    mobile_number = Column(String)
+    director = Column(String)
+    surveyor_name = Column(String, primary_key=True)
+    computer_serial = Column(String, primary_key=True)
+    paid = Column(Boolean, default=False)
+    expire_date = Column(Date)
+
+Base.metadata.create_all(bind=engine)
+
+# App setup
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Login Required Decorator
-def login_required(request: Request):
-    if not request.session.get("logged_in"):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-# Login routes
 @app.get("/", response_class=HTMLResponse)
-def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-@app.post("/login")
-def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username == "admin" and password == "admin123":
-        request.session["logged_in"] = True
-        return RedirectResponse("/dashboard", status_code=302)
-    raise HTTPException(status_code=401, detail="Invalid credentials")
-
-@app.get("/logout")
-def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse("/")
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard_page(request: Request):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
+def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.get("/api/all")
-def api_all(request: Request, db: Session = Depends(get_db)):
-    login_required(request)
-    companies = db.query(models.Company).all()
-    data = []
-
-    for company in companies:
-        for surveyor in company.surveyors:
-            for computer in surveyor.computers:
-                for license in computer.licenses:
-                    data.append({
-                        "company_id": company.id,
-                        "company_name": company.company_name,
-                        "company_code": company.company_id,
-                        "email": company.email,
-                        "mobile_number": company.mobile_number,
-                        "director": company.director,
-                        "surveyor_id": surveyor.id,
-                        "surveyor_name": surveyor.name,
-                        "computer_id": computer.id,
-                        "computer_serial_number": computer.serial_number,
-                        "license_id": license.id,
-                        "paid": license.paid,
-                        "expire_date": license.expire_date.isoformat(),
-                        "status": license.paid and license.expire_date > date.today()
-                    })
-
-    return JSONResponse(data)
+def get_all():
+    db = SessionLocal()
+    rows = db.query(LicenseRegistry).all()
+    result = []
+    for row in rows:
+        result.append({
+            "company_name": row.company_name,
+            "company_code": row.company_code,
+            "email": row.email,
+            "mobile_number": row.mobile_number,
+            "director": row.director,
+            "surveyor_name": row.surveyor_name,
+            "computer_serial_number": row.computer_serial,
+            "paid": row.paid,
+            "expire_date": row.expire_date.isoformat(),
+            "status": row.paid and row.expire_date > date.today()
+        })
+    return JSONResponse(result)
 
 @app.get("/api/options")
-def get_options(request: Request, db: Session = Depends(get_db)):
-    login_required(request)
+def get_options():
+    db = SessionLocal()
+    companies = db.query(LicenseRegistry.company_name).distinct().all()
+    surveyors = db.query(LicenseRegistry.surveyor_name).distinct().all()
+    computers = db.query(LicenseRegistry.computer_serial).distinct().all()
     return JSONResponse({
-        "companies": [
-            {"id": c.id, "name": c.company_name, "company_id": c.company_id}
-            for c in db.query(models.Company).all()
-        ],
-        "surveyors": [
-            {"id": s.id, "name": s.name, "company_id": c.id}
-            for s in db.query(models.Surveyor).all()
-            for c in s.companies
-        ],
-        "computers": [
-            {
-                "id": comp.id,
-                "serial_number": comp.serial_number,
-                "surveyor_id": comp.surveyor_id  # 🔥 this line is missing in your current version
-            }
-            for comp in db.query(models.Computer).all()
-        ]
+        "companies": [{"id": c.company_name, "name": c.company_name} for c in companies],
+        "surveyors": [{"id": s.surveyor_name, "name": s.surveyor_name} for s in surveyors],
+        "computers": [{"id": c.computer_serial, "serial_number": c.computer_serial} for c in computers]
     })
 
-
-
-@app.post("/api/create/company")
-def create_company(
-    request: Request,
-    company_name: str = Form(...),
-    company_id: str = Form(...),
-    email: str = Form(...),
-    mobile_number: str = Form(...),
-    director: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    login_required(request)
-    exists = db.query(models.Company).filter_by(company_id=company_id).first()
-    if not exists:
-        db.add(models.Company(
-            company_name=company_name,
-            company_id=company_id,
-            email=email,
-            mobile_number=mobile_number,
-            director=director,
-            temporary=True  # ✅ Mark temporary
-        ))
-        db.commit()
-    return JSONResponse({"message": "Company processed"})
-
-
-@app.post("/api/create/surveyor")
-def create_surveyor(
-    request: Request,
-    name: str = Form(...),
-    company_id: int = Form(...),
-    db: Session = Depends(get_db)
-):
-    login_required(request)
-    surveyor = db.query(models.Surveyor).filter_by(name=name).first()
-    if not surveyor:
-        surveyor = models.Surveyor(name=name, temporary=True)  # ✅ Mark temporary
-        db.add(surveyor)
-        db.commit()
-        db.refresh(surveyor)
-    company = db.query(models.Company).get(company_id)
-    if company and company not in surveyor.companies:
-        surveyor.companies.append(company)
-        db.commit()
-    return JSONResponse({"message": "Surveyor processed"})
-
-
-@app.post("/api/create/computer")
-def create_computer(
-    request: Request,
-    serial_number: str = Form(...),
-    surveyor_id: int = Form(...),
-    db: Session = Depends(get_db)
-):
-    login_required(request)
-    exists = db.query(models.Computer).filter_by(serial_number=serial_number).first()
-    if not exists:
-        db.add(models.Computer(
-            serial_number=serial_number,
-            surveyor_id=surveyor_id,
-            temporary=True  # ✅ Mark temporary
-        ))
-        db.commit()
-    return JSONResponse({"message": "Computer processed"})
-
-
-@app.post("/api/create/license")
-def create_license(
-    request: Request,
-    computer_id: int = Form(...),
+@app.post("/api/create/full")
+def create_full(
+    new_company_name: str = Form(...),
+    new_company_code: str = Form(...),
+    new_company_email: str = Form(...),
+    new_company_mobile: str = Form(...),
+    new_company_director: str = Form(...),
+    new_surveyor_name: str = Form(...),
+    new_computer_serial: str = Form(...),
     paid: bool = Form(...),
-    expire_date: str = Form(...),
-    db: Session = Depends(get_db)
+    expire_date: str = Form(...)
 ):
-    login_required(request)
-
-    # Create license
-    license = models.License(computer_id=computer_id, paid=paid, expire_date=expire_date, temporary=True)
-    db.add(license)
+    db = SessionLocal()
+    expire = date.fromisoformat(expire_date)
+    entry = LicenseRegistry(
+        company_name=new_company_name,
+        company_code=new_company_code,
+        email=new_company_email,
+        mobile_number=new_company_mobile,
+        director=new_company_director,
+        surveyor_name=new_surveyor_name,
+        computer_serial=new_computer_serial,
+        paid=paid,
+        expire_date=expire
+    )
+    db.merge(entry)
     db.commit()
-
-    # Mark all related as non-temporary
-    license.temporary = False
-    license.computer.temporary = False
-    license.computer.surveyor.temporary = False
-    for c in license.computer.surveyor.companies:
-        c.temporary = False
-    db.commit()
-
-    return JSONResponse({"message": "License created and confirmed"})
-
-
-# Optional cleanup endpoint (can run on load or scheduled)
-@app.post("/api/cleanup-temp")
-def cleanup_temp(request: Request, db: Session = Depends(get_db)):
-    login_required(request)
-
-    # Delete orphan temp licenses
-    db.query(models.License).filter(models.License.temporary == True).delete()
-    db.query(models.Computer).filter(models.Computer.temporary == True).delete()
-    db.query(models.Surveyor).filter(models.Surveyor.temporary == True).delete()
-    db.query(models.Company).filter(models.Company.temporary == True).delete()
-    db.commit()
-    return {"message": "Temporary entries cleaned up"}
-
-
-@app.post("/api/delete/{license_id}")
-def delete_license(license_id: int, request: Request, db: Session = Depends(get_db)):
-    login_required(request)
-    lic = db.query(models.License).filter_by(id=license_id).first()
-    if lic:
-        db.delete(lic)
-        db.commit()
-    return JSONResponse({"message": "License deleted"})
-
-@app.post("/api/update/{license_id}")
-def update_license(
-    license_id: int,
-    request: Request,
-    paid: bool = Form(...),
-    expire_date: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    login_required(request)
-    lic = db.query(models.License).filter_by(id=license_id).first()
-    if lic:
-        lic.paid = paid
-        lic.expire_date = expire_date
-        db.commit()
-    return JSONResponse({"message": "License updated"})
-
-@app.post("/api/verify_license")
-def verify_license(
-    company_name: str = Form(...),
-    company_id: str = Form(...),
-    measurer: str = Form(...),
-    machine_name: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    company = db.query(models.Company).filter_by(company_name=company_name, company_id=company_id).first()
-    if not company:
-        return JSONResponse({"valid": False, "reason": "Company not found"})
-
-    for surveyor in company.surveyors:
-        if surveyor.name != measurer:
-            continue
-        for computer in surveyor.computers:
-            if computer.serial_number == machine_name:
-                for license in computer.licenses:
-                    if license.paid and license.expire_date > date.today():
-                        return JSONResponse({
-                            "valid": True,
-                            "company_name": company.company_name,
-                            
-                            "company_id": company.company_id,
-                            "measurer": surveyor.name
-                        })
-
-    return JSONResponse({"valid": False, "reason": "No valid license found"})
-
-# from datetime import datetime, timedelta
-
-# @app.post("/api/cleanup_temporary")
-# def cleanup_temporary(db: Session = Depends(get_db)):
-#     db.query(models.License).filter_by(temporary=True).delete()
-#     db.query(models.Computer).filter_by(temporary=True).delete()
-#     db.query(models.Surveyor).filter_by(temporary=True).delete()
-#     db.query(models.Company).filter_by(temporary=True).delete()
-#     db.commit()
-#     return JSONResponse({"message": "Temporary records cleaned up"})
+    return JSONResponse({"message": "License created"})
 

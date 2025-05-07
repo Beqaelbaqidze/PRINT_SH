@@ -1,59 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>License Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 <div class="container py-4">
   <h2 class="mb-4">License Management Dashboard</h2>
 
-  <!-- Step-by-step creation flow -->
-  <div class="mb-3">
-    <label class="form-label">1. Select or Create Company</label>
-    <div class="d-flex gap-2">
-      <select id="companySelect" class="form-select"></select>
-      <input type="text" id="newCompanyName" class="form-control" placeholder="New Company Name">
-      <input type="text" id="newCompanyID" class="form-control" placeholder="Company ID">
-      <input type="email" id="newCompanyEmail" class="form-control" placeholder="Email">
-      <input type="text" id="newCompanyMobile" class="form-control" placeholder="Mobile">
-      <input type="text" id="newCompanyDirector" class="form-control" placeholder="Director">
-      <button class="btn btn-primary" onclick="createCompany()">Add</button>
+  <form id="fullCreateForm">
+    <!-- Company -->
+    <div class="mb-3">
+      <label class="form-label">Company</label>
+      <div class="d-flex flex-wrap gap-2">
+        <select id="companySelect" name="company_id" class="form-select w-auto">
+          <option value="">Select existing...</option>
+        </select>
+        <input type="text" id="newCompanyName" name="new_company_name" class="form-control" placeholder="New Company Name">
+        <input type="text" name="new_company_code" class="form-control" placeholder="Company ID">
+        <input type="email" name="new_company_email" class="form-control" placeholder="Email">
+        <input type="text" name="new_company_mobile" class="form-control" placeholder="Mobile">
+        <input type="text" name="new_company_director" class="form-control" placeholder="Director">
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <label class="form-label">2. Select or Create Surveyor</label>
-    <div class="d-flex gap-2">
-      <select id="surveyorSelect" class="form-select" disabled></select>
-      <input type="text" id="newSurveyorName" class="form-control" placeholder="New Surveyor Name">
-      <button class="btn btn-primary" onclick="createSurveyor()">Add</button>
+    <!-- Surveyor -->
+    <div class="mb-3">
+      <label class="form-label">Surveyor</label>
+      <div class="d-flex gap-2">
+        <select id="surveyorSelect" name="surveyor_id" class="form-select w-auto">
+          <option value="">Select existing...</option>
+        </select>
+        <input type="text" name="new_surveyor_name" class="form-control" placeholder="New Surveyor Name">
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <label class="form-label">3. Select or Create Computer</label>
-    <div class="d-flex gap-2">
-      <select id="computerSelect" class="form-select" disabled></select>
-      <input type="text" id="newComputerSerial" class="form-control" placeholder="Serial Number">
-      <button class="btn btn-primary" onclick="createComputer()">Add</button>
+    <!-- Computer -->
+    <div class="mb-3">
+      <label class="form-label">Computer</label>
+      <div class="d-flex gap-2">
+        <select id="computerSelect" name="computer_id" class="form-select w-auto">
+          <option value="">Select existing...</option>
+        </select>
+        <input type="text" name="new_computer_serial" class="form-control" placeholder="Serial Number">
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <label class="form-label">4. Create License</label>
-    <form id="licenseForm">
+    <!-- License -->
+    <div class="mb-3">
+      <label class="form-label">License</label>
       <input type="date" name="expire_date" class="form-control mb-2" required>
       <select name="paid" class="form-select mb-2">
         <option value="true">Paid</option>
         <option value="false">Not Paid</option>
       </select>
-      <button class="btn btn-success" type="submit">Create License</button>
-    </form>
-  </div>
+      <button class="btn btn-success" type="submit">Submit All</button>
+    </div>
+  </form>
 
   <hr>
-
   <h4>All Licenses</h4>
   <table class="table table-bordered">
     <thead>
@@ -64,154 +69,58 @@
 </div>
 
 <script>
-  let globalOptions = { companies: [], surveyors: [], computers: [] };
-  let selectedCompanyId = localStorage.getItem("selectedCompanyId") || null;
-  let selectedSurveyorId = localStorage.getItem("selectedSurveyorId") || null;
-  let selectedComputerId = localStorage.getItem("selectedComputerId") || null;
+async function loadOptions() {
+  const res = await fetch('/api/options');
+  const data = await res.json();
 
-  async function fetchOptions() {
-    const res = await fetch('/api/options');
-    globalOptions = await res.json();
-    return globalOptions;
-  }
-
-  async function loadTable() {
-    const res = await fetch('/api/all');
-    const data = await res.json();
-    const tbody = document.getElementById('licenseTable');
-    tbody.innerHTML = '';
-    data.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.company_name}</td>
-        <td>${row.surveyor_name}</td>
-        <td>${row.computer_serial_number}</td>
-        <td>${row.paid ? 'Yes' : 'No'}</td>
-        <td>${row.expire_date}</td>
-        <td>${row.status ? '✅' : '❌'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  async function populateFormSteps() {
-    const { companies, surveyors, computers } = await fetchOptions();
-    const companySelect = document.getElementById('companySelect');
-    const surveyorSelect = document.getElementById('surveyorSelect');
-    const computerSelect = document.getElementById('computerSelect');
-
-    companySelect.innerHTML = '<option value="">Select Company</option>';
-    companies.forEach(c => companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-    if (selectedCompanyId) companySelect.value = selectedCompanyId;
-
-    if (selectedCompanyId) {
-      surveyorSelect.disabled = false;
-      surveyorSelect.innerHTML = '<option value="">Select Surveyor</option>';
-      surveyors.filter(s => s.company_id == selectedCompanyId)
-               .forEach(s => surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
-      if (selectedSurveyorId) surveyorSelect.value = selectedSurveyorId;
-    }
-
-    if (selectedSurveyorId) {
-      computerSelect.disabled = false;
-      computerSelect.innerHTML = '<option value="">Select Computer</option>';
-      computers.filter(c => c.surveyor_id == selectedSurveyorId)
-               .forEach(c => computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
-      if (selectedComputerId) computerSelect.value = selectedComputerId;
-    }
-  }
-
-  async function createCompany() {
-    const form = new FormData();
-    form.append('company_name', document.getElementById('newCompanyName').value);
-    form.append('company_id', document.getElementById('newCompanyID').value);
-    form.append('email', document.getElementById('newCompanyEmail').value);
-    form.append('mobile_number', document.getElementById('newCompanyMobile').value);
-    form.append('director', document.getElementById('newCompanyDirector').value);
-    await fetch('/api/create/company', { method: 'POST', body: form });
-    selectedCompanyId = null;
-    localStorage.removeItem("selectedCompanyId");
-    await populateFormSteps();
-  }
-
-  async function createSurveyor() {
-    selectedCompanyId = document.getElementById('companySelect').value;
-    localStorage.setItem("selectedCompanyId", selectedCompanyId);
-    const form = new FormData();
-    form.append('name', document.getElementById('newSurveyorName').value);
-    form.append('company_id', selectedCompanyId);
-    await fetch('/api/create/surveyor', { method: 'POST', body: form });
-    await populateFormSteps();
-  }
-
-  async function createComputer() {
-    selectedCompanyId = document.getElementById('companySelect').value;
-    selectedSurveyorId = document.getElementById('surveyorSelect').value;
-    localStorage.setItem("selectedCompanyId", selectedCompanyId);
-    localStorage.setItem("selectedSurveyorId", selectedSurveyorId);
-    const form = new FormData();
-    form.append('serial_number', document.getElementById('newComputerSerial').value);
-    form.append('surveyor_id', selectedSurveyorId);
-    await fetch('/api/create/computer', { method: 'POST', body: form });
-    await populateFormSteps();
-  }
-
-  document.getElementById('companySelect').addEventListener('change', () => {
-    selectedCompanyId = document.getElementById('companySelect').value;
-    selectedSurveyorId = null;
-    selectedComputerId = null;
-    localStorage.setItem("selectedCompanyId", selectedCompanyId);
-    populateFormSteps();
+  const companySelect = document.getElementById('companySelect');
+  companySelect.innerHTML = '<option value="">Select existing...</option>';
+  data.companies.forEach(c => {
+    companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
   });
 
-  document.getElementById('surveyorSelect').addEventListener('change', () => {
-    selectedSurveyorId = document.getElementById('surveyorSelect').value;
-    selectedComputerId = null;
-    localStorage.setItem("selectedSurveyorId", selectedSurveyorId);
-    populateFormSteps();
+  const surveyorSelect = document.getElementById('surveyorSelect');
+  surveyorSelect.innerHTML = '<option value="">Select existing...</option>';
+  data.surveyors.forEach(s => {
+    surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
   });
 
-  document.getElementById('computerSelect').addEventListener('change', () => {
-    selectedComputerId = document.getElementById('computerSelect').value;
-    localStorage.setItem("selectedComputerId", selectedComputerId);
+  const computerSelect = document.getElementById('computerSelect');
+  computerSelect.innerHTML = '<option value="">Select existing...</option>';
+  data.computers.forEach(c => {
+    computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`;
   });
+}
 
-  document.getElementById('licenseForm').addEventListener('submit', async (e) => {
+async function loadTable() {
+  const res = await fetch('/api/all');
+  const data = await res.json();
+  const tbody = document.getElementById('licenseTable');
+  tbody.innerHTML = '';
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.company_name}</td>
+      <td>${row.surveyor_name}</td>
+      <td>${row.computer_serial_number}</td>
+      <td>${row.paid ? 'Yes' : 'No'}</td>
+      <td>${row.expire_date}</td>
+      <td>${row.status ? '✅' : '❌'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('fullCreateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const computerId = document.getElementById('computerSelect').value;
-  if (!computerId) return alert("Please select or create a computer first");
-
   const form = new FormData(e.target);
-  form.append('computer_id', computerId);
-
-  const res = await fetch('/api/create/license', {
-    method: 'POST',
-    body: form
-  });
-
-  if (res.ok) {
-    e.target.reset();
-
-    // Clear stored selections
-    selectedCompanyId = null;
-    selectedSurveyorId = null;
-    selectedComputerId = null;
-    localStorage.removeItem("selectedCompanyId");
-    localStorage.removeItem("selectedSurveyorId");
-    localStorage.removeItem("selectedComputerId");
-
-    await populateFormSteps();
-    await loadTable();
-
-    alert("✅ License created successfully!");
-  } else {
-    alert("❌ License creation failed.");
-  }
+  await fetch('/api/create/full', { method: 'POST', body: form });
+  e.target.reset();
+  await loadOptions();
+  await loadTable();
 });
 
-
-  populateFormSteps();
-  loadTable();
+loadOptions();
+loadTable();
 </script>
 </body>
 </html>
