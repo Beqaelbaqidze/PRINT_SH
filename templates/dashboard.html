@@ -6,45 +6,119 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     body {
-      font-family: monospace;
-      background: #fff;
-      color: #000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f7f8fa;
       margin: 30px;
+      color: #333;
     }
 
     h2 {
-      font-weight: bold;
-      font-size: 18px;
-      border-bottom: 2px solid #000;
-      padding-bottom: 5px;
+      color: #222;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 6px;
+      margin-top: 40px;
+    }
+
+    button {
+      padding: 10px 18px;
+      font-size: 14px;
+      background-color: #3a7bd5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2a65b1;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
-      border: 2px solid #000;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-top: 20px;
     }
 
     th, td {
-      padding: 8px;
-      border: 1px solid #000;
-      font-size: 14px;
+      padding: 12px 15px;
+      text-align: left;
     }
 
-    button {
-      font-family: monospace;
-      padding: 6px 12px;
-      background: #000;
-      color: #fff;
-      border: 2px solid #000;
-      cursor: pointer;
+    th {
+      background-color: #f2f3f5;
       font-weight: bold;
+      font-size: 14px;
+      color: #555;
     }
 
-    button:hover {
-      background: #fff;
-      color: #000;
+    tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    tr:hover {
+      background-color: #eef3ff;
+    }
+
+    select:disabled,
+    input:disabled {
+      background-color: #f4f4f4;
+      color: #777;
+      border-color: #ddd;
+    }
+
+    .edit-btn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .save-btn {
+      background-color: #28a745;
+      color: white;
+      margin-right: 5px;
+    }
+
+    .cancel-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      padding: 24px;
+      border-radius: 10px;
+      width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-content h2 {
+      margin-top: 0;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     .form-group {
@@ -54,207 +128,262 @@
 
     .form-group label {
       margin-top: 10px;
-      margin-bottom: 3px;
-      font-weight: bold;
+      margin-bottom: 5px;
+      font-weight: 500;
     }
 
     .form-group input,
     .form-group select {
-      padding: 6px;
-      border: 2px solid #000;
-      background: #fff;
-      font-family: monospace;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
 
-    /* MODAL */
-    #modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #3a7bd5;
     }
 
-    #modalContent {
-      background: #fff;
-      padding: 20px;
-      width: 400px;
-      border: 2px solid #000;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
+    form button[type="submit"] {
+      margin-top: 20px;
+      background-color: #3a7bd5;
+      color: white;
       font-weight: bold;
-      font-size: 16px;
+      transition: background-color 0.2s ease;
     }
 
-    .close-btn {
-      cursor: pointer;
+    form button[type="submit"]:hover {
+      background-color: #2a65b1;
     }
   </style>
 </head>
 <body>
 
-  <h2>License Records</h2>
+<h2>License Records</h2>
 
-  <button id="openModal">+ Add New License</button>
+<button id="openModal">➕ Add License</button>
 
-  <table id="recordTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Company</th>
-        <th>Paid</th>
-        <th>Expire</th>
-        <th>Status</th>
-        <th>License</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<table id="recordTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Company</th>
+      <th>Operator</th>
+      <th>Serial</th>
+      <th>Paid</th>
+      <th>Expire Date</th>
+      <th>Status</th>
+      <th>License Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <!-- Modal -->
-  <div id="modal">
-    <div id="modalContent">
-      <div class="modal-header">
-        <span>Add License</span>
-        <span class="close-btn" id="closeModal">[X]</span>
+<!-- Modal -->
+<div id="registerModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" id="closeModal">&times;</span>
+    <h2>Register New License</h2>
+    <form id="registerForm">
+      <div class="form-group">
+        <label>Company:</label>
+        <select id="companySelect" name="company_name" required>
+          <option value="">-- Select company --</option>
+          <option value="__new__">+ Add new company</option>
+        </select>
+        <input id="companyInput" type="text" name="company_name_new" placeholder="New Company Name" style="display:none;" />
+        <input name="company_code" placeholder="Company Code" required />
+        <input name="email" placeholder="Email" />
+        <input name="mobile" placeholder="Mobile" />
+        <input name="director" placeholder="Director" />
+
+        <label>Operator:</label>
+        <select id="operatorSelect" name="operator_name" required>
+          <option value="">-- Select operator --</option>
+          <option value="__new__">+ Add new operator</option>
+        </select>
+        <input id="operatorInput" type="text" name="operator_name_new" placeholder="New Operator Name" style="display:none;" />
+
+        <label>Computer:</label>
+        <select id="computerSelect" name="serial_number" required>
+          <option value="">-- Select computer --</option>
+          <option value="__new__">+ Add new computer</option>
+        </select>
+        <input id="computerInput" type="text" name="serial_number_new" placeholder="New Serial Number" style="display:none;" />
+
+        <label for="paid">Paid:</label>
+        <select name="paid" id="paid">
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+
+        <label for="expire_date">Expire Date:</label>
+        <input type="date" name="expire_date" required />
       </div>
-      <form id="registerForm">
-        <div class="form-group">
-          <label>Company</label>
-          <input name="company_name" required />
-          <label>Code</label>
-          <input name="company_code" required />
-          <label>Email</label>
-          <input name="email" />
-          <label>Mobile</label>
-          <input name="mobile" />
-          <label>Director</label>
-          <input name="director" />
-          <label>Operator</label>
-          <input name="operator_name" required />
-          <label>Serial Number</label>
-          <input name="serial_number" required />
-          <label>Paid</label>
-          <select name="paid">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-          <label>Expire Date</label>
-          <input type="date" name="expire_date" required />
-        </div>
-        <br />
-        <button type="submit">Save</button>
-      </form>
-    </div>
+      <button type="submit">Register</button>
+    </form>
   </div>
+</div>
 
-  <script>
-    function loadRecords() {
-      $.get("/api/records", function (data) {
-        let rows = "";
-        data.forEach(r => {
-          rows += `
-            <tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
-              <td>${r.id}</td>
-              <td>${r.company}</td>
-              <td>
-                <select class="edit-paid" disabled>
-                  <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
-                  <option value="false" ${!r.paid ? "selected" : ""}>No</option>
-                </select>
-              </td>
-              <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled></td>
-              <td>
-                <select class="edit-status" disabled>
-                  <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
-                  <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
-                </select>
-              </td>
-              <td>${r.license_status}</td>
-              <td class="action-buttons">
-                <button class="edit-btn">Edit</button>
-              </td>
-            </tr>`;
-        });
-        $("#recordTable tbody").html(rows);
+<script>
+  function loadRecords() {
+    $.get("/api/records", function (data) {
+      let rows = "";
+      data.forEach(r => {
+        rows += `<tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
+          <td>${r.id}</td>
+          <td>${r.company}</td>
+          <td>${r.operator}</td>
+          <td>${r.serial_number}</td>
+          <td>
+            <select class="edit-paid" disabled>
+              <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
+              <option value="false" ${!r.paid ? "selected" : ""}>No</option>
+            </select>
+          </td>
+          <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled /></td>
+          <td>
+            <select class="edit-status" disabled>
+              <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
+              <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
+            </select>
+          </td>
+          <td>${r.license_status}</td>
+          <td class="action-buttons">
+            <button class="edit-btn">Edit</button>
+          </td>
+        </tr>`;
+      });
+
+      $("#recordTable tbody").html(rows);
+    });
+  }
+
+  $("#recordTable").on("click", ".edit-btn", function () {
+    const row = $(this).closest("tr");
+    row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", false);
+    row.find(".action-buttons").html(`
+      <button class="save-btn">Save</button>
+      <button class="cancel-btn">Cancel</button>
+    `);
+  });
+
+  $("#recordTable").on("click", ".cancel-btn", function () {
+    const row = $(this).closest("tr");
+    const paid = row.data("paid") === "true";
+    row.find(".edit-paid").val(paid ? "true" : "false");
+    row.find(".edit-expire").val(row.data("expire"));
+    row.find(".edit-status").val(row.data("status"));
+    row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", true);
+    row.find(".action-buttons").html(`<button class="edit-btn">Edit</button>`);
+  });
+
+  $("#recordTable").on("click", ".save-btn", function () {
+    const row = $(this).closest("tr");
+    const id = row.data("id");
+    const paid = row.find(".edit-paid").val() === "true";
+    const expire_date = row.find(".edit-expire").val();
+    const status = row.find(".edit-status").val();
+
+    $.ajax({
+      url: "/api/update-record",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ record_id: id, paid, expire_date, status }),
+      success: loadRecords,
+      error: function () {
+        alert("❌ Update failed.");
+      }
+    });
+  });
+
+  $("#registerForm").on("submit", function (e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(this));
+    formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
+    formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
+    formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
+    formData.paid = formData.paid === "true";
+
+    delete formData.company_name_new;
+    delete formData.operator_name_new;
+    delete formData.serial_number_new;
+
+    $.ajax({
+      url: "/api/register",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(formData),
+      success: function () {
+        alert("✅ Registered");
+        loadRecords();
+        $("#registerForm")[0].reset();
+        $("#registerModal").hide();
+        $("#companyInput, #operatorInput, #computerInput").hide();
+      },
+      error: function () {
+        alert("❌ Error");
+      }
+    });
+  });
+
+  $("#companySelect").change(function () {
+    const selected = $(this).val();
+    if (selected === "__new__") {
+      $("#companyInput").show();
+      $("input[name='company_code']").val("");
+      $("input[name='email']").val("");
+      $("input[name='mobile']").val("");
+      $("input[name='director']").val("");
+    } else {
+      $("#companyInput").hide();
+      $.get("/api/companies", function (companies) {
+        const company = companies.find(c => c.name === selected);
+        if (company) {
+          $("input[name='company_code']").val(company.code || "");
+          $("input[name='email']").val(company.email || "");
+          $("input[name='mobile']").val(company.mobile || "");
+          $("input[name='director']").val(company.director || "");
+        }
       });
     }
+  });
 
-    // Delegated button logic
-    $("#recordTable").on("click", ".edit-btn", function () {
-      const row = $(this).closest("tr");
-      row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", false);
-      row.find(".action-buttons").html(`
-        <button class="save-btn">Save</button>
-        <button class="cancel-btn">Cancel</button>
-      `);
-    });
+  $("#operatorSelect").change(function () {
+    $("#operatorInput").toggle($(this).val() === "__new__");
+  });
 
-    $("#recordTable").on("click", ".cancel-btn", function () {
-      const row = $(this).closest("tr");
-      const paid = row.data("paid") === true || row.data("paid") === "true";
-      row.find(".edit-paid").val(paid ? "true" : "false");
-      row.find(".edit-expire").val(row.data("expire"));
-      row.find(".edit-status").val(row.data("status"));
-      row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", true);
-      row.find(".action-buttons").html(`<button class="edit-btn">Edit</button>`);
-    });
+  $("#computerSelect").change(function () {
+    $("#computerInput").toggle($(this).val() === "__new__");
+  });
 
-    $("#recordTable").on("click", ".save-btn", function () {
-      const row = $(this).closest("tr");
-      const id = row.data("id");
-      const paid = row.find(".edit-paid").val() === "true";
-      const expire_date = row.find(".edit-expire").val();
-      const status = row.find(".edit-status").val();
+  $("#openModal").on("click", () => $("#registerModal").fadeIn());
+  $("#closeModal").on("click", () => $("#registerModal").fadeOut());
 
-      $.ajax({
-        url: "/api/update-record",
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({ record_id: id, paid, expire_date, status }),
-        success: function () {
-          loadRecords();
-        },
-        error: function (xhr) {
-          alert("Update failed.");
-        }
+  function loadOptions() {
+    $.get("/api/companies", function (companies) {
+      companies.forEach(c => {
+        $("#companySelect").append(`<option value="${c.name}">${c.name}</option>`);
       });
     });
-
-    $("#registerForm").on("submit", function (e) {
-      e.preventDefault();
-      const formData = Object.fromEntries(new FormData(this));
-      formData.paid = formData.paid === "true";
-      $.ajax({
-        url: "/api/register",
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(formData),
-        success: function () {
-          alert("✔️ License Added");
-          $("#modal").hide();
-          $("#registerForm")[0].reset();
-          loadRecords();
-        },
-        error: function () {
-          alert("❌ Failed to add license");
-        }
+    $.get("/api/operators", function (operators) {
+      operators.forEach(o => {
+        $("#operatorSelect").append(`<option value="${o.name}">${o.name}</option>`);
       });
     });
+    $.get("/api/computers", function (computers) {
+      computers.forEach(c => {
+        $("#computerSelect").append(`<option value="${c.serial_number}">${c.serial_number}</option>`);
+      });
+    });
+  }
 
-    // Modal open/close
-    $("#openModal").on("click", () => $("#modal").show());
-    $("#closeModal").on("click", () => $("#modal").hide());
-
-    loadRecords();
-  </script>
+  loadOptions();
+  loadRecords();
+</script>
 
 </body>
 </html>
