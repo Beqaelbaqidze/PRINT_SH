@@ -169,8 +169,8 @@ def api_all(request: Request, db: Session = Depends(get_db)):
                         "surveyor_name": surveyor.name,
                         "computer_serial_number": computer.serial_number,
                         "paid": license.paid,
-                        "expire_date": license.expire_date,
-                        "status": license.paid and license.expire_date > date.today(),
+                        "expire_date": license.expire_date.isoformat(),
+                        "status": license.paid and license.expire_date > date.today()
                         "license_id": license.id
                     })
     return JSONResponse(data)
