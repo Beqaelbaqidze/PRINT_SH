@@ -69,16 +69,6 @@
             display: flex;
             flex-direction: column;
         }
-
-        .clickable {
-            cursor: pointer;
-            color: #0077cc;
-            text-decoration: underline;
-        }
-
-        .clickable:hover {
-            color: #005fa3;
-        }
     </style>
 </head>
 <body>
@@ -119,22 +109,23 @@
 
             <label for="expire_date">Expire Date:</label>
             <input type="date" name="expire_date" required>
+ 
         </div>
 
         <button type="submit">Register</button>
     </form>
 
     <script>
-        // Load records and bind click handlers
+        // Load records
         function loadRecords() {
             $.get("/api/records", function (data) {
                 let rows = "";
                 data.forEach(r => {
                     rows += `<tr>
                         <td>${r.id}</td>
-                        <td class="clickable company">${r.company}</td>
-                        <td class="clickable operator">${r.operator}</td>
-                        <td class="clickable computer">${r.serial_number}</td>
+                        <td>${r.company}</td>
+                        <td>${r.operator}</td>
+                        <td>${r.serial_number}</td>
                         <td>${r.paid ? 'Yes' : 'No'}</td>
                         <td>${r.expire_date}</td>
                         <td>${r.status}</td>
@@ -142,43 +133,6 @@
                     </tr>`;
                 });
                 $("#recordTable tbody").html(rows);
-
-                // Clickable handlers
-                $(".clickable.company").on("click", function () {
-                    const name = $(this).text();
-                    $.get("/api/companies", function (companies) {
-                        const company = companies.find(c => c.name === name);
-                        if (company) {
-                            alert(`📦 Company Info:\n\nName: ${company.name}\nCode: ${company.code}\nEmail: ${company.email}\nMobile: ${company.mobile}\nDirector: ${company.director}`);
-                        } else {
-                            alert("Company not found.");
-                        }
-                    });
-                });
-
-                $(".clickable.operator").on("click", function () {
-                    const name = $(this).text();
-                    $.get("/api/operators", function (operators) {
-                        const operator = operators.find(o => o.name === name);
-                        if (operator) {
-                            alert(`👤 Operator Info:\n\nName: ${operator.name}`);
-                        } else {
-                            alert("Operator not found.");
-                        }
-                    });
-                });
-
-                $(".clickable.computer").on("click", function () {
-                    const serial = $(this).text();
-                    $.get("/api/computers", function (computers) {
-                        const comp = computers.find(c => c.serial_number === serial);
-                        if (comp) {
-                            alert(`💻 Computer Info:\n\nSerial Number: ${comp.serial_number}`);
-                        } else {
-                            alert("Computer not found.");
-                        }
-                    });
-                });
             });
         }
 
@@ -193,17 +147,17 @@
                 contentType: "application/json",
                 data: JSON.stringify(formData),
                 success: function () {
-                    alert("✅ Registration successful");
+                    alert("Registration successful");
                     loadRecords();
                     $("#registerForm")[0].reset();
                 },
                 error: function (xhr) {
-                    alert("❌ Error: " + xhr.responseJSON.detail);
+                    alert("Error: " + xhr.responseJSON.detail);
                 }
             });
         });
 
-        loadRecords(); // On page load
+        loadRecords(); // Load on page load
     </script>
 
 </body>
