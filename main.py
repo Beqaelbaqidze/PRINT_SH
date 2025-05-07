@@ -6,6 +6,7 @@ import psycopg2
 import psycopg2.extras
 from pydantic import BaseModel
 from datetime import date
+from fastapi import Body
 
 app = FastAPI()
 
@@ -179,6 +180,57 @@ def register_license(data: LicenseRegistration):
             conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+
+@app.post("/api/update-record")
+def update_record(
+    record_id: int = Body(...),
+    paid: bool = Body(...),
+    expire_date: date = Body(...),
+    status: str = Body(...)
+):
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Auto-set paid = false if expired
+        today = date.today()
+        if expire_date < today:
+            paid = False
+
+        # Update license table
+        cursor.execute("""
+            UPDATE licenses
+            SET paid = %s,
+                expire_date = %s
+            WHERE id = (
+                SELECT license_fk FROM license_records WHERE id = %s
+            )
+        """, (paid, expire_date, record_id))
+
+        # Update license_records status
+        cursor.execute("""
+            UPDATE license_records
+            SET license_status = %s,
+                status = %s
+            WHERE id = %s
+        """, (
+            "active" if paid and expire_date >= today else "inactive",
+            status,
+            record_id
+        ))
+
+        conn.commit()
+        return {"message": "Updated successfully."}
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         if conn:
             cursor.close()
