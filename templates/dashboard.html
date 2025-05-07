@@ -179,8 +179,31 @@
 
         // Toggle input fields when selecting "+ Add new"
         $("#companySelect").change(function () {
-            $("#companyInput").toggle($(this).val() === "__new__");
+    const selected = $(this).val();
+
+    if (selected === "__new__") {
+        $("#companyInput").show();
+        // Clear all company detail fields
+        $("input[name='company_code']").val("");
+        $("input[name='email']").val("");
+        $("input[name='mobile']").val("");
+        $("input[name='director']").val("");
+    } else {
+        $("#companyInput").hide();
+
+        // Fetch companies and find selected one
+        $.get("/api/companies", function (companies) {
+            const company = companies.find(c => c.name === selected);
+            if (company) {
+                $("input[name='company_code']").val(company.code || "");
+                $("input[name='email']").val(company.email || "");
+                $("input[name='mobile']").val(company.mobile || "");
+                $("input[name='director']").val(company.director || "");
+            }
         });
+    }
+});
+
 
         $("#operatorSelect").change(function () {
             $("#operatorInput").toggle($(this).val() === "__new__");
