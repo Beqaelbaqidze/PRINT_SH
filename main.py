@@ -1,5 +1,5 @@
 from urllib import request
-from fastapi import FastAPI, HTTPException, Form, Request, Body
+from fastapi import Depends, FastAPI, HTTPException, Form, Request, Body
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
@@ -42,33 +42,34 @@ def get_connection():
 
 # === Routes ===
 
+def login_required(request: Request):
+    if not request.session or not request.session.get("logged_in"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+# ===== Routes =====
+
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-# @app.get("/dashboard", response_class=HTMLResponse)
-# def dashboard(request: Request):
-#     if not request.session.get("logged_in"):  # If the user is not logged in, redirect to the login page
-#         return RedirectResponse("/login", status_code=302)
-#     return templates.TemplateResponse("dashboard.html", {"request": request})  # Show the dashboard if logged in
-
-
-
 
 @app.post("/login")
-def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    # Hardcoded credentials for example; you should use a database or hashed passwords for production
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin1234":
-        request.session["logged_in"] = True  # Store the login status in the session
-        return templates.TemplateResponse("dashboard.html", {"request": request})  # Redirect to dashboard
+        request.session["logged_in"] = True
+        return RedirectResponse("/dashboard", status_code=302)
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.get("/logout")
 def logout(request: Request):
-    request.session.clear()  # Clear the session (i.e., log the user out)
-    return RedirectResponse("/login", status_code=302)  # Redirect to login page after logout
+    request.session.clear()
+    return RedirectResponse("/", status_code=302)
 
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request, _: None = Depends(login_required)):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 # === Models ===
