@@ -100,7 +100,7 @@ class AllTablesUpdate(BaseModel):
 def all_create(data: AllTablesCreate):
     conn = cursor = None
     try:
-        if not request.session.get("logged_in"):
+        if not Request.session.get("logged_in"):
              return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -149,7 +149,7 @@ def all_create(data: AllTablesCreate):
 def all_update(data: AllTablesUpdate):
     conn = cursor = None
     try:
-        if not request.session.get("logged_in"):
+        if not Request.session.get("logged_in"):
             return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -183,7 +183,7 @@ def all_update(data: AllTablesUpdate):
 def all_delete(company_id: int):
     conn = cursor = None
     try:
-        if not request.session.get("logged_in"):
+        if not Request.session.get("logged_in"):
            return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -200,7 +200,7 @@ def all_delete(company_id: int):
 
 @app.get("/all/list")
 def get_all_data():
-    if not request.session.get("logged_in"):
+    if not Request.session.get("logged_in"):
             return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
@@ -243,7 +243,7 @@ def get_all_data():
 
 @app.post("/all/filter")
 def filter_data(filter: dict = Body(...)):
-    if not request.session.get("logged_in"):
+    if not Request.session.get("logged_in"):
             return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
