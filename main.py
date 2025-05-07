@@ -1,100 +1,166 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import Column, String, Boolean, Date, create_engine, select
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from fastapi.middleware.cors import CORSMiddleware
+import psycopg2
+import psycopg2.extras
+from pydantic import BaseModel
 from datetime import date
 
-# Database setup
-DATABASE_URL = "postgresql://beqa:1524Elbaqa@localhost:5432/licenses"
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
-
-# Table model
-class LicenseRegistry(Base):
-    __tablename__ = "license_registry"
-    company_name = Column(String, primary_key=True)
-    company_code = Column(String)
-    email = Column(String)
-    mobile_number = Column(String)
-    director = Column(String)
-    surveyor_name = Column(String, primary_key=True)
-    computer_serial = Column(String, primary_key=True)
-    paid = Column(Boolean, default=False)
-    expire_date = Column(Date)
-
-Base.metadata.create_all(bind=engine)
-
-# App setup
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Jinja2 templates (optional, for HTML dashboard)
 templates = Jinja2Templates(directory="templates")
 
-@app.get("/", response_class=HTMLResponse)
+# PostgreSQL Connection
+def get_connection():
+    return psycopg2.connect(
+        host="localhost",
+        database="licenses",
+        user="beqa",
+        password="1524Elbaqa",
+        port=5432
+    )
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@app.get("/api/all")
-def get_all():
-    db = SessionLocal()
-    rows = db.query(LicenseRegistry).all()
-    result = []
-    for row in rows:
-        result.append({
-            "company_name": row.company_name,
-            "company_code": row.company_code,
-            "email": row.email,
-            "mobile_number": row.mobile_number,
-            "director": row.director,
-            "surveyor_name": row.surveyor_name,
-            "computer_serial_number": row.computer_serial,
-            "paid": row.paid,
-            "expire_date": row.expire_date.isoformat(),
-            "status": row.paid and row.expire_date > date.today()
-        })
-    return JSONResponse(result)
+# ---------- SELECT ALL ----------
+@app.get("/api/companies")
+def get_companies():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM companies ORDER BY id")
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
 
-@app.get("/api/options")
-def get_options():
-    db = SessionLocal()
-    companies = db.query(LicenseRegistry.company_name).distinct().all()
-    surveyors = db.query(LicenseRegistry.surveyor_name).distinct().all()
-    computers = db.query(LicenseRegistry.computer_serial).distinct().all()
-    return JSONResponse({
-        "companies": [{"id": c.company_name, "name": c.company_name} for c in companies],
-        "surveyors": [{"id": s.surveyor_name, "name": s.surveyor_name} for s in surveyors],
-        "computers": [{"id": c.computer_serial, "serial_number": c.computer_serial} for c in computers]
-    })
+@app.get("/api/operators")
+def get_operators():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM operators ORDER BY id")
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
 
-@app.post("/api/create/full")
-def create_full(
-    new_company_name: str = Form(...),
-    new_company_code: str = Form(...),
-    new_company_email: str = Form(...),
-    new_company_mobile: str = Form(...),
-    new_company_director: str = Form(...),
-    new_surveyor_name: str = Form(...),
-    new_computer_serial: str = Form(...),
-    paid: bool = Form(...),
-    expire_date: str = Form(...)
-):
-    db = SessionLocal()
-    expire = date.fromisoformat(expire_date)
-    entry = LicenseRegistry(
-        company_name=new_company_name,
-        company_code=new_company_code,
-        email=new_company_email,
-        mobile_number=new_company_mobile,
-        director=new_company_director,
-        surveyor_name=new_surveyor_name,
-        computer_serial=new_computer_serial,
-        paid=paid,
-        expire_date=expire
-    )
-    db.merge(entry)
-    db.commit()
-    return JSONResponse({"message": "License created"})
+@app.get("/api/computers")
+def get_computers():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM computers ORDER BY id")
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
 
+@app.get("/api/licenses")
+def get_licenses():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM licenses ORDER BY id")
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+@app.get("/api/records")
+def get_records():
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("""
+        SELECT lr.id, c.name AS company, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status
+        FROM license_records lr
+        LEFT JOIN companies c ON lr.company_fk = c.id
+        LEFT JOIN operators o ON lr.operator_fk = o.id
+        LEFT JOIN computers cmp ON lr.computer_fk = cmp.id
+        LEFT JOIN licenses l ON lr.license_fk = l.id
+        ORDER BY lr.id
+    """)
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
+
+
+class LicenseRegistration(BaseModel):
+    company_name: str
+    company_code: str
+    email: str
+    mobile: str
+    director: str
+    operator_name: str
+    serial_number: str
+    paid: bool
+    expire_date: date
+    license_status: str
+    status: str
+
+# --- Registration Route ---
+@app.post("/api/register")
+def register_license(data: LicenseRegistration):
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        conn.autocommit = False  # Begin transaction
+
+        # Insert into companies
+        cursor.execute("""
+            INSERT INTO companies (name, code, email, mobile, director)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+        """, (data.company_name, data.company_code, data.email, data.mobile, data.director))
+        company_id = cursor.fetchone()[0]
+
+        # Insert into operators
+        cursor.execute("""
+            INSERT INTO operators (name)
+            VALUES (%s) RETURNING id
+        """, (data.operator_name,))
+        operator_id = cursor.fetchone()[0]
+
+        # Insert into computers
+        cursor.execute("""
+            INSERT INTO computers (serial_number)
+            VALUES (%s) RETURNING id
+        """, (data.serial_number,))
+        computer_id = cursor.fetchone()[0]
+
+        # Insert into licenses
+        cursor.execute("""
+            INSERT INTO licenses (paid, expire_date)
+            VALUES (%s, %s) RETURNING id
+        """, (data.paid, data.expire_date))
+        license_id = cursor.fetchone()[0]
+
+        # Insert into main table
+        cursor.execute("""
+            INSERT INTO license_records (company_fk, operator_fk, computer_fk, license_fk, license_status, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (company_id, operator_id, computer_id, license_id, data.license_status, data.status))
+
+        conn.commit()
+        return {"message": "Registration successful."}
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()

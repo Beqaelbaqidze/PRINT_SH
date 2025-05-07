@@ -1,126 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>License Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>License Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 6px;
+        }
+        th { background-color: #f0f0f0; }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container py-4">
-  <h2 class="mb-4">License Management Dashboard</h2>
+<body>
 
-  <form id="fullCreateForm">
-    <!-- Company -->
-    <div class="mb-3">
-      <label class="form-label">Company</label>
-      <div class="d-flex flex-wrap gap-2">
-        <select id="companySelect" name="company_id" class="form-select w-auto">
-          <option value="">Select existing...</option>
-        </select>
-        <input type="text" id="newCompanyName" name="new_company_name" class="form-control" placeholder="New Company Name">
-        <input type="text" name="new_company_code" class="form-control" placeholder="Company ID">
-        <input type="email" name="new_company_email" class="form-control" placeholder="Email">
-        <input type="text" name="new_company_mobile" class="form-control" placeholder="Mobile">
-        <input type="text" name="new_company_director" class="form-control" placeholder="Director">
-      </div>
-    </div>
+    <h2>License Records</h2>
+    <table id="recordTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Company</th>
+                <th>Operator</th>
+                <th>Serial</th>
+                <th>Paid</th>
+                <th>Expire Date</th>
+                <th>Status</th>
+                <th>License Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-    <!-- Surveyor -->
-    <div class="mb-3">
-      <label class="form-label">Surveyor</label>
-      <div class="d-flex gap-2">
-        <select id="surveyorSelect" name="surveyor_id" class="form-select w-auto">
-          <option value="">Select existing...</option>
-        </select>
-        <input type="text" name="new_surveyor_name" class="form-control" placeholder="New Surveyor Name">
-      </div>
-    </div>
+    <h2>Register New License</h2>
+    <form id="registerForm">
+        <input name="company_name" placeholder="Company Name" required><br>
+        <input name="company_code" placeholder="Company Code" required><br>
+        <input name="email" placeholder="Email"><br>
+        <input name="mobile" placeholder="Mobile"><br>
+        <input name="director" placeholder="Director"><br>
+        <input name="operator_name" placeholder="Operator Name" required><br>
+        <input name="serial_number" placeholder="Serial Number" required><br>
+        <label>Paid:
+            <select name="paid">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+            </select>
+        </label><br>
+        <input name="expire_date" placeholder="Expire Date (YYYY-MM-DD)" required><br>
+        <input name="license_status" placeholder="License Status" required><br>
+        <input name="status" placeholder="Status" required><br>
+        <button type="submit">Register</button>
+    </form>
 
-    <!-- Computer -->
-    <div class="mb-3">
-      <label class="form-label">Computer</label>
-      <div class="d-flex gap-2">
-        <select id="computerSelect" name="computer_id" class="form-select w-auto">
-          <option value="">Select existing...</option>
-        </select>
-        <input type="text" name="new_computer_serial" class="form-control" placeholder="Serial Number">
-      </div>
-    </div>
+    <script>
+        // Load records
+        function loadRecords() {
+            $.get("/api/records", function (data) {
+                let rows = "";
+                data.forEach(r => {
+                    rows += `<tr>
+                        <td>${r.id}</td>
+                        <td>${r.company}</td>
+                        <td>${r.operator}</td>
+                        <td>${r.serial_number}</td>
+                        <td>${r.paid ? 'Yes' : 'No'}</td>
+                        <td>${r.expire_date}</td>
+                        <td>${r.status}</td>
+                        <td>${r.license_status}</td>
+                    </tr>`;
+                });
+                $("#recordTable tbody").html(rows);
+            });
+        }
 
-    <!-- License -->
-    <div class="mb-3">
-      <label class="form-label">License</label>
-      <input type="date" name="expire_date" class="form-control mb-2" required>
-      <select name="paid" class="form-select mb-2">
-        <option value="true">Paid</option>
-        <option value="false">Not Paid</option>
-      </select>
-      <button class="btn btn-success" type="submit">Submit All</button>
-    </div>
-  </form>
+        // Submit form
+        $("#registerForm").on("submit", function (e) {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(this));
+            formData.paid = formData.paid === "true";
+            $.ajax({
+                url: "/api/register",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function () {
+                    alert("Registration successful");
+                    loadRecords();
+                    $("#registerForm")[0].reset();
+                },
+                error: function (xhr) {
+                    alert("Error: " + xhr.responseJSON.detail);
+                }
+            });
+        });
 
-  <hr>
-  <h4>All Licenses</h4>
-  <table class="table table-bordered">
-    <thead>
-      <tr><th>Company</th><th>Surveyor</th><th>Computer</th><th>Paid</th><th>Expires</th><th>Status</th></tr>
-    </thead>
-    <tbody id="licenseTable"></tbody>
-  </table>
-</div>
+        loadRecords(); // Load on page load
+    </script>
 
-<script>
-async function loadOptions() {
-  const res = await fetch('/api/options');
-  const data = await res.json();
-
-  const companySelect = document.getElementById('companySelect');
-  companySelect.innerHTML = '<option value="">Select existing...</option>';
-  data.companies.forEach(c => {
-    companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-  });
-
-  const surveyorSelect = document.getElementById('surveyorSelect');
-  surveyorSelect.innerHTML = '<option value="">Select existing...</option>';
-  data.surveyors.forEach(s => {
-    surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-  });
-
-  const computerSelect = document.getElementById('computerSelect');
-  computerSelect.innerHTML = '<option value="">Select existing...</option>';
-  data.computers.forEach(c => {
-    computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`;
-  });
-}
-
-async function loadTable() {
-  const res = await fetch('/api/all');
-  const data = await res.json();
-  const tbody = document.getElementById('licenseTable');
-  tbody.innerHTML = '';
-  data.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${row.company_name}</td>
-      <td>${row.surveyor_name}</td>
-      <td>${row.computer_serial_number}</td>
-      <td>${row.paid ? 'Yes' : 'No'}</td>
-      <td>${row.expire_date}</td>
-      <td>${row.status ? '✅' : '❌'}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-document.getElementById('fullCreateForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  await fetch('/api/create/full', { method: 'POST', body: form });
-  e.target.reset();
-  await loadOptions();
-  await loadTable();
-});
-
-loadOptions();
-loadTable();
-</script>
 </body>
 </html>
