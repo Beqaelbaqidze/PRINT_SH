@@ -170,7 +170,7 @@ def api_all(request: Request, db: Session = Depends(get_db)):
                         "computer_serial_number": computer.serial_number,
                         "paid": license.paid,
                         "expire_date": license.expire_date.isoformat(),
-                        "status": license.paid and license.expire_date > date.today()
+                        "status": license.paid and license.expire_date > date.today(),
                         "license_id": license.id
                     })
     return JSONResponse(data)
