@@ -106,8 +106,7 @@ class LicenseRegistration(BaseModel):
     serial_number: str
     paid: bool
     expire_date: date
-    license_status: str
-    status: str
+
 
 # --- Registration Route ---
 @app.post("/api/register")
@@ -116,7 +115,12 @@ def register_license(data: LicenseRegistration):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        conn.autocommit = False  # Begin transaction
+        conn.autocommit = False
+
+        # --- Calculate status automatically ---
+        today = date.today()
+        license_status = "active" if data.paid and data.expire_date > today else "inactive"
+        status = "enabled" if license_status == "active" else "disabled"
 
         # Insert into companies
         cursor.execute("""
@@ -146,11 +150,11 @@ def register_license(data: LicenseRegistration):
         """, (data.paid, data.expire_date))
         license_id = cursor.fetchone()[0]
 
-        # Insert into main table
+        # Insert into main table with calculated status
         cursor.execute("""
             INSERT INTO license_records (company_fk, operator_fk, computer_fk, license_fk, license_status, status)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (company_id, operator_id, computer_id, license_id, data.license_status, data.status))
+        """, (company_id, operator_id, computer_id, license_id, license_status, status))
 
         conn.commit()
         return {"message": "Registration successful."}
