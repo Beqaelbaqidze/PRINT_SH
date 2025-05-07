@@ -1,68 +1,27 @@
 {% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block header %}All Data Overview{% endblock %}
 {% block content %}
-
-<h2>Companies</h2>
-<table class="table table-bordered">
-  <thead><tr><th>Name</th><th>ID</th><th>Email</th><th>Mobile</th><th>Director</th></tr></thead>
-  <tbody>
-    {% for c in companies %}
+<table border="1" cellpadding="6" cellspacing="0" style="width: 100%; text-align: left;">
+  <tr>
+    <th>Company Name</th>
+    <th>Company ID</th>
+    <th>Director</th>
+    <th>Surveyor Name</th>
+    <th>Computer Serial</th>
+    <th>License Paid</th>
+    <th>Expire Date</th>
+  </tr>
+  {% for row in rows %}
     <tr>
-      <td>{{ c.company_name }}</td>
-      <td>{{ c.company_id }}</td>
-      <td>{{ c.email }}</td>
-      <td>{{ c.mobile }}</td>
-      <td>{{ c.director }}</td>
+      <td>{{ row.company_name }}</td>
+      <td>{{ row.company_id }}</td>
+      <td>{{ row.director }}</td>
+      <td>{{ row.surveyor_name }}</td>
+      <td>{{ row.serial_number }}</td>
+      <td>{{ 'Yes' if row.paid else 'No' }}</td>
+      <td>{{ row.expire_date }}</td>
     </tr>
-    {% endfor %}
-  </tbody>
+  {% endfor %}
 </table>
-
-<h2>Surveyors</h2>
-<table class="table table-bordered">
-  <thead><tr><th>Name</th><th>Companies</th></tr></thead>
-  <tbody>
-    {% for s in surveyors %}
-    <tr>
-      <td>{{ s.name }}</td>
-      <td>{{ ', '.join(s.companies) }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<h2>Computers</h2>
-<table class="table table-bordered">
-  <thead><tr><th>Serial</th><th>Surveyor</th></tr></thead>
-  <tbody>
-    {% for c in computers %}
-    <tr>
-      <td>{{ c.serial_number }}</td>
-      <td>{{ c.surveyor_name }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<h2>Licenses</h2>
-<table class="table table-bordered">
-  <thead><tr><th>Computer</th><th>Surveyor</th><th>Paid</th><th>Expire</th><th>Status</th></tr></thead>
-  <tbody>
-    {% for l in licenses %}
-    <tr>
-      <td>{{ l.computer_serial }}</td>
-      <td>{{ l.surveyor_name }}</td>
-      <td>{{ 'Yes' if l.paid else 'No' }}</td>
-      <td>{{ l.expire_date }}</td>
-      <td>
-        {% if l.status %}
-          <span class="text-success">✅ Active</span>
-        {% else %}
-          <span class="text-danger">❌ Expired</span>
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
 {% endblock %}
