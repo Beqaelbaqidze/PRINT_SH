@@ -188,29 +188,35 @@ def create_license(
     db: Session = Depends(get_db)
 ):
     login_required(request)
-    exists = db.query(models.License).filter_by(computer_id=computer_id, expire_date=expire_date).first()
-    if not exists:
-        # Final license creation
-        license = models.License(
-            computer_id=computer_id,
-            paid=paid,
-            expire_date=expire_date,
-            temporary=False  # ✅ Mark permanent
-        )
-        db.add(license)
 
-        # Set related items as not temporary
-        computer = db.query(models.Computer).filter_by(id=computer_id).first()
-        if computer:
-            computer.temporary = False
-            surveyor = computer.surveyor
-            if surveyor:
-                surveyor.temporary = False
-                for company in surveyor.companies:
-                    company.temporary = False
+    # Create license
+    license = models.License(computer_id=computer_id, paid=paid, expire_date=expire_date, temporary=True)
+    db.add(license)
+    db.commit()
 
-        db.commit()
-    return JSONResponse({"message": "License processed"})
+    # Mark all related as non-temporary
+    license.temporary = False
+    license.computer.temporary = False
+    license.computer.surveyor.temporary = False
+    for c in license.computer.surveyor.companies:
+        c.temporary = False
+    db.commit()
+
+    return JSONResponse({"message": "License created and confirmed"})
+
+
+# Optional cleanup endpoint (can run on load or scheduled)
+@app.post("/api/cleanup-temp")
+def cleanup_temp(request: Request, db: Session = Depends(get_db)):
+    login_required(request)
+
+    # Delete orphan temp licenses
+    db.query(models.License).filter(models.License.temporary == True).delete()
+    db.query(models.Computer).filter(models.Computer.temporary == True).delete()
+    db.query(models.Surveyor).filter(models.Surveyor.temporary == True).delete()
+    db.query(models.Company).filter(models.Company.temporary == True).delete()
+    db.commit()
+    return {"message": "Temporary entries cleaned up"}
 
 
 @app.post("/api/delete/{license_id}")
@@ -267,14 +273,14 @@ def verify_license(
 
     return JSONResponse({"valid": False, "reason": "No valid license found"})
 
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
 
-@app.post("/api/cleanup_temporary")
-def cleanup_temporary(db: Session = Depends(get_db)):
-    db.query(models.License).filter_by(temporary=True).delete()
-    db.query(models.Computer).filter_by(temporary=True).delete()
-    db.query(models.Surveyor).filter_by(temporary=True).delete()
-    db.query(models.Company).filter_by(temporary=True).delete()
-    db.commit()
-    return JSONResponse({"message": "Temporary records cleaned up"})
+# @app.post("/api/cleanup_temporary")
+# def cleanup_temporary(db: Session = Depends(get_db)):
+#     db.query(models.License).filter_by(temporary=True).delete()
+#     db.query(models.Computer).filter_by(temporary=True).delete()
+#     db.query(models.Surveyor).filter_by(temporary=True).delete()
+#     db.query(models.Company).filter_by(temporary=True).delete()
+#     db.commit()
+#     return JSONResponse({"message": "Temporary records cleaned up"})
 
