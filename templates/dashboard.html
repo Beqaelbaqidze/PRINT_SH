@@ -5,12 +5,70 @@
     <title>License Dashboard</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 6px;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background-color: #f9f9f9;
         }
-        th { background-color: #f0f0f0; }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        form {
+            background: #ffffff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 8px 10px;
+            margin: 8px 0 16px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        form button {
+            padding: 10px 20px;
+            background-color: #3a7bd5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        form button:hover {
+            background-color: #2a65b1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body>
@@ -34,22 +92,28 @@
 
     <h2>Register New License</h2>
     <form id="registerForm">
-        <input name="company_name" placeholder="Company Name" required><br>
-        <input name="company_code" placeholder="Company Code" required><br>
-        <input name="email" placeholder="Email"><br>
-        <input name="mobile" placeholder="Mobile"><br>
-        <input name="director" placeholder="Director"><br>
-        <input name="operator_name" placeholder="Operator Name" required><br>
-        <input name="serial_number" placeholder="Serial Number" required><br>
-        <label>Paid:
-            <select name="paid">
+        <div class="form-group">
+            <input name="company_name" placeholder="Company Name" required>
+            <input name="company_code" placeholder="Company Code" required>
+            <input name="email" placeholder="Email">
+            <input name="mobile" placeholder="Mobile">
+            <input name="director" placeholder="Director">
+            <input name="operator_name" placeholder="Operator Name" required>
+            <input name="serial_number" placeholder="Serial Number" required>
+
+            <label for="paid">Paid:</label>
+            <select name="paid" id="paid">
                 <option value="true">Yes</option>
                 <option value="false">No</option>
             </select>
-        </label><br>
-        <input name="expire_date" placeholder="Expire Date (YYYY-MM-DD)" required><br>
-        <input name="license_status" placeholder="License Status" required><br>
-        <input name="status" placeholder="Status" required><br>
+
+            <label for="expire_date">Expire Date:</label>
+            <input type="date" name="expire_date" required>
+
+            <input name="license_status" placeholder="License Status" required>
+            <input name="status" placeholder="Status" required>
+        </div>
+
         <button type="submit">Register</button>
     </form>
 
