@@ -1,298 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>License Dashboard</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f9f9f9;
-        }
+  <meta charset="UTF-8" />
+  <title>License Dashboard</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f9f9f9;
+    }
 
-        h2 {
-            color: #333;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 5px;
-        }
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 5px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            margin-bottom: 30px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      margin-bottom: 30px;
+    }
 
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: left;
-        }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
 
-        th {
-            background-color: #f0f0f0;
-        }
+    th {
+      background-color: #f0f0f0;
+    }
 
-        form {
-            background: #ffffff;
-            padding: 20px;
-            border: 1px solid #ddd;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+    form {
+      background: #ffffff;
+      padding: 20px;
+      border: 1px solid #ddd;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
 
-        form input, form select {
-            width: 100%;
-            padding: 8px 10px;
-            margin: 8px 0 16px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
+    form input, form select {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 8px 0 16px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
 
-        form button {
-            padding: 10px 20px;
-            background-color: #3a7bd5;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    form button {
+      padding: 10px 20px;
+      background-color: #3a7bd5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-        form button:hover {
-            background-color: #2a65b1;
-        }
+    form button:hover {
+      background-color: #2a65b1;
+    }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
 </head>
 <body>
 
 <h2>License Records</h2>
 <table id="recordTable">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Company</th>
-            <th>Operator</th>
-            <th>Serial</th>
-            <th>Paid</th>
-            <th>Expire Date</th>
-            <th>Status</th>
-            <th>License Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Company</th>
+      <th>Operator</th>
+      <th>Serial</th>
+      <th>Paid</th>
+      <th>Expire Date</th>
+      <th>Status</th>
+      <th>License Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <h2>Register New License</h2>
 <form id="registerForm">
-    <div class="form-group">
-        <label>Company:</label>
-        <select id="companySelect" name="company_name" required>
-            <option value="">-- Select company --</option>
-            <option value="__new__">+ Add new company</option>
-        </select>
-        <input id="companyInput" type="text" name="company_name_new" placeholder="New Company Name" style="display:none;">
-        <input name="company_code" placeholder="Company Code" required>
-        <input name="email" placeholder="Email">
-        <input name="mobile" placeholder="Mobile">
-        <input name="director" placeholder="Director">
+  <div class="form-group">
+    <label>Company:</label>
+    <select id="companySelect" name="company_name" required>
+      <option value="">-- Select company --</option>
+      <option value="__new__">+ Add new company</option>
+    </select>
+    <input id="companyInput" type="text" name="company_name_new" placeholder="New Company Name" style="display:none;" />
+    <input name="company_code" placeholder="Company Code" required />
+    <input name="email" placeholder="Email" />
+    <input name="mobile" placeholder="Mobile" />
+    <input name="director" placeholder="Director" />
 
-        <label>Operator:</label>
-        <select id="operatorSelect" name="operator_name" required>
-            <option value="">-- Select operator --</option>
-            <option value="__new__">+ Add new operator</option>
-        </select>
-        <input id="operatorInput" type="text" name="operator_name_new" placeholder="New Operator Name" style="display:none;">
+    <label>Operator:</label>
+    <select id="operatorSelect" name="operator_name" required>
+      <option value="">-- Select operator --</option>
+      <option value="__new__">+ Add new operator</option>
+    </select>
+    <input id="operatorInput" type="text" name="operator_name_new" placeholder="New Operator Name" style="display:none;" />
 
-        <label>Computer:</label>
-        <select id="computerSelect" name="serial_number" required>
-            <option value="">-- Select computer --</option>
-            <option value="__new__">+ Add new computer</option>
-        </select>
-        <input id="computerInput" type="text" name="serial_number_new" placeholder="New Serial Number" style="display:none;">
+    <label>Computer:</label>
+    <select id="computerSelect" name="serial_number" required>
+      <option value="">-- Select computer --</option>
+      <option value="__new__">+ Add new computer</option>
+    </select>
+    <input id="computerInput" type="text" name="serial_number_new" placeholder="New Serial Number" style="display:none;" />
 
-        <label for="paid">Paid:</label>
-        <select name="paid" id="paid">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-        </select>
+    <label for="paid">Paid:</label>
+    <select name="paid" id="paid">
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
 
-        <label for="expire_date">Expire Date:</label>
-        <input type="date" name="expire_date" required>
-    </div>
-    <button type="submit">Register</button>
+    <label for="expire_date">Expire Date:</label>
+    <input type="date" name="expire_date" required />
+  </div>
+  <button type="submit">Register</button>
 </form>
 
 <script>
-    function loadRecords() {
-        $.get("/api/records", function (data) {
-            let rows = "";
-            data.forEach(r => {
-                rows += `<tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
-                    <td>${r.id}</td>
-                    <td>${r.company}</td>
-                    <td>${r.operator}</td>
-                    <td>${r.serial_number}</td>
+  function loadRecords() {
+    $.get("/api/records", function (data) {
+      let rows = "";
+      data.forEach(r => {
+        rows += `<tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
+          <td>${r.id}</td>
+          <td>${r.company}</td>
+          <td>${r.operator}</td>
+          <td>${r.serial_number}</td>
 
-                    <td>
-                        <select class="edit-paid" disabled>
-                            <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
-                            <option value="false" ${!r.paid ? "selected" : ""}>No</option>
-                        </select>
-                    </td>
+          <td>
+            <select class="edit-paid" disabled>
+              <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
+              <option value="false" ${!r.paid ? "selected" : ""}>No</option>
+            </select>
+          </td>
 
-                    <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled></td>
+          <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled /></td>
 
-                    <td>
-                        <select class="edit-status" disabled>
-                            <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
-                            <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
-                        </select>
-                    </td>
+          <td>
+            <select class="edit-status" disabled>
+              <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
+              <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
+            </select>
+          </td>
 
-                    <td>${r.license_status}</td>
-                    <td class="action-buttons">
-                        <button class="edit-btn">Edit</button>
-                    </td>
-                </tr>`;
-            });
+          <td>${r.license_status}</td>
+          <td class="action-buttons">
+            <button class="edit-btn">Edit</button>
+          </td>
+        </tr>`;
+      });
 
-            $("#recordTable tbody").html(rows);
+      $("#recordTable tbody").html(rows);
+    });
+  }
 
-            $(".edit-btn").on("click", function () {
-                const row = $(this).closest("tr");
-                row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", false);
-                row.find(".action-buttons").html(`
-                    <button class="save-btn">Save</button>
-                    <button class="cancel-btn">Cancel</button>
-                `);
-            });
+  // Event delegation for dynamic rows
+  $("#recordTable").on("click", ".edit-btn", function () {
+    const row = $(this).closest("tr");
+    row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", false);
+    row.find(".action-buttons").html(`
+      <button class="save-btn">Save</button>
+      <button class="cancel-btn">Cancel</button>
+    `);
+  });
 
-            $("#recordTable").on("click", ".save-btn", function () {
-                const row = $(this).closest("tr");
-                const id = row.data("id");
+  $("#recordTable").on("click", ".cancel-btn", function () {
+    const row = $(this).closest("tr");
+    const originalPaid = row.data("paid") === true || row.data("paid") === "true";
+    const originalExpire = row.data("expire");
+    const originalStatus = row.data("status");
 
-                const paid = row.find(".edit-paid").val() === "true";
-                const expire_date = row.find(".edit-expire").val();
-                const status = row.find(".edit-status").val();
+    row.find(".edit-paid").val(originalPaid ? "true" : "false");
+    row.find(".edit-expire").val(originalExpire);
+    row.find(".edit-status").val(originalStatus);
 
-                $.ajax({
-                    url: "/api/update-record",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ record_id: id, paid, expire_date, status }),
-                    success: function () {
-                        loadRecords();
-                    },
-                    error: function (xhr) {
-                        alert("❌ Update failed: " + xhr.responseJSON.detail);
-                    }
-                });
-            });
+    row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", true);
+    row.find(".action-buttons").html(`<button class="edit-btn">Edit</button>`);
+  });
 
-            $("#recordTable").on("click", ".cancel-btn", function () {
-                const row = $(this).closest("tr");
-                const originalPaid = row.data("paid") === true || row.data("paid") === "true";
-                const originalExpire = row.data("expire");
-                const originalStatus = row.data("status");
+  $("#recordTable").on("click", ".save-btn", function () {
+    const row = $(this).closest("tr");
+    const id = row.data("id");
 
-                row.find(".edit-paid").val(originalPaid ? "true" : "false");
-                row.find(".edit-expire").val(originalExpire);
-                row.find(".edit-status").val(originalStatus);
-                row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", true);
-                row.find(".action-buttons").html(`<button class="edit-btn">Edit</button>`);
-            });
-        });
-    }
+    const paid = row.find(".edit-paid").val() === "true";
+    const expire_date = row.find(".edit-expire").val();
+    const status = row.find(".edit-status").val();
 
-    function loadOptions() {
-        $.get("/api/companies", function (companies) {
-            companies.forEach(c => {
-                $("#companySelect").append(`<option value="${c.name}">${c.name}</option>`);
-            });
-        });
+    $.ajax({
+      url: "/api/update-record",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ record_id: id, paid, expire_date, status }),
+      success: function () {
+        loadRecords(); // Reload to reflect updates
+      },
+      error: function (xhr) {
+        alert("❌ Update failed: " + xhr.responseJSON.detail);
+      }
+    });
+  });
 
-        $.get("/api/operators", function (operators) {
-            operators.forEach(o => {
-                $("#operatorSelect").append(`<option value="${o.name}">${o.name}</option>`);
-            });
-        });
+  function loadOptions() {
+    $.get("/api/companies", function (companies) {
+      companies.forEach(c => {
+        $("#companySelect").append(`<option value="${c.name}">${c.name}</option>`);
+      });
+    });
 
-        $.get("/api/computers", function (computers) {
-            computers.forEach(c => {
-                $("#computerSelect").append(`<option value="${c.serial_number}">${c.serial_number}</option>`);
-            });
-        });
-    }
+    $.get("/api/operators", function (operators) {
+      operators.forEach(o => {
+        $("#operatorSelect").append(`<option value="${o.name}">${o.name}</option>`);
+      });
+    });
 
-    $("#companySelect").change(function () {
-        const selected = $(this).val();
-        if (selected === "__new__") {
-            $("#companyInput").show();
-            $("input[name='company_code']").val("");
-            $("input[name='email']").val("");
-            $("input[name='mobile']").val("");
-            $("input[name='director']").val("");
-        } else {
-            $("#companyInput").hide();
-            $.get("/api/companies", function (companies) {
-                const company = companies.find(c => c.name === selected);
-                if (company) {
-                    $("input[name='company_code']").val(company.code || "");
-                    $("input[name='email']").val(company.email || "");
-                    $("input[name='mobile']").val(company.mobile || "");
-                    $("input[name='director']").val(company.director || "");
-                }
-            });
+    $.get("/api/computers", function (computers) {
+      computers.forEach(c => {
+        $("#computerSelect").append(`<option value="${c.serial_number}">${c.serial_number}</option>`);
+      });
+    });
+  }
+
+  $("#companySelect").change(function () {
+    const selected = $(this).val();
+    if (selected === "__new__") {
+      $("#companyInput").show();
+      $("input[name='company_code']").val("");
+      $("input[name='email']").val("");
+      $("input[name='mobile']").val("");
+      $("input[name='director']").val("");
+    } else {
+      $("#companyInput").hide();
+      $.get("/api/companies", function (companies) {
+        const company = companies.find(c => c.name === selected);
+        if (company) {
+          $("input[name='company_code']").val(company.code || "");
+          $("input[name='email']").val(company.email || "");
+          $("input[name='mobile']").val(company.mobile || "");
+          $("input[name='director']").val(company.director || "");
         }
+      });
+    }
+  });
+
+  $("#operatorSelect").change(function () {
+    $("#operatorInput").toggle($(this).val() === "__new__");
+  });
+
+  $("#computerSelect").change(function () {
+    $("#computerInput").toggle($(this).val() === "__new__");
+  });
+
+  $("#registerForm").on("submit", function (e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(this));
+
+    formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
+    formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
+    formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
+    formData.paid = formData.paid === "true";
+
+    delete formData.company_name_new;
+    delete formData.operator_name_new;
+    delete formData.serial_number_new;
+
+    $.ajax({
+      url: "/api/register",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(formData),
+      success: function () {
+        alert("✅ Registration successful");
+        loadRecords();
+        $("#registerForm")[0].reset();
+        $("#companyInput, #operatorInput, #computerInput").hide();
+      },
+      error: function (xhr) {
+        alert("❌ Error: " + xhr.responseJSON.detail);
+      }
     });
+  });
 
-    $("#operatorSelect").change(function () {
-        $("#operatorInput").toggle($(this).val() === "__new__");
-    });
-
-    $("#computerSelect").change(function () {
-        $("#computerInput").toggle($(this).val() === "__new__");
-    });
-
-    $("#registerForm").on("submit", function (e) {
-        e.preventDefault();
-        const formData = Object.fromEntries(new FormData(this));
-        formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
-        formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
-        formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
-        formData.paid = formData.paid === "true";
-        delete formData.company_name_new;
-        delete formData.operator_name_new;
-        delete formData.serial_number_new;
-
-        $.ajax({
-            url: "/api/register",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(formData),
-            success: function () {
-                alert("✅ Registration successful");
-                loadRecords();
-                $("#registerForm")[0].reset();
-                $("#companyInput, #operatorInput, #computerInput").hide();
-            },
-            error: function (xhr) {
-                alert("❌ Error: " + xhr.responseJSON.detail);
-            }
-        });
-    });
-
-    loadOptions();
-    loadRecords();
+  loadOptions();
+  loadRecords();
 </script>
 
 </body>
