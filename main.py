@@ -194,3 +194,31 @@ def update_license(
         lic.expire_date = expire_date
         db.commit()
     return JSONResponse({"message": "License updated"})
+
+@app.post("/api/verify_license")
+def verify_license(
+    company_name: str = Form(...),
+    company_id: str = Form(...),
+    measurer: str = Form(...),
+    machine_name: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    company = db.query(models.Company).filter_by(company_name=company_name, company_id=company_id).first()
+    if not company:
+        return JSONResponse({"valid": False, "reason": "Company not found"})
+
+    for surveyor in company.surveyors:
+        if surveyor.name != measurer:
+            continue
+        for computer in surveyor.computers:
+            if computer.serial_number == machine_name:
+                for license in computer.licenses:
+                    if license.paid and license.expire_date > date.today():
+                        return JSONResponse({
+                            "valid": True,
+                            "company_name": company.company_name,
+                            "company_id": company.company_id,
+                            "measurer": surveyor.name
+                        })
+
+    return JSONResponse({"valid": False, "reason": "No valid license found"})
