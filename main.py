@@ -52,24 +52,55 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse("/", status_code=302)
 
     companies = db.query(models.Company).all()
-    data = []
+    surveyors = db.query(models.Surveyor).all()
+    computers = db.query(models.Computer).all()
+    licenses = db.query(models.License).all()
 
-    for company in companies:
-        for surveyor in company.surveyors:
-            for computer in surveyor.computers:
-                for lic in computer.licenses:
-                    data.append({
-                        "company_name": company.company_name,
-                        "surveyor_name": surveyor.name,
-                        "computer_serial": computer.serial_number,
-                        "paid": lic.paid,
-                        "expire_date": lic.expire_date,
-                        "status": lic.paid and lic.expire_date > date.today()
-                    })
+    # Join real values for display
+    licenses_with_info = []
+    for lic in licenses:
+        comp = lic.computer
+        surveyor = comp.surveyor
+        licenses_with_info.append({
+            "license_id": lic.id,
+            "computer_serial": comp.serial_number,
+            "surveyor_name": surveyor.name,
+            "paid": lic.paid,
+            "expire_date": lic.expire_date,
+            "status": lic.paid and lic.expire_date > date.today()
+        })
+
+    computers_with_info = []
+    for comp in computers:
+        computers_with_info.append({
+            "computer_id": comp.id,
+            "serial_number": comp.serial_number,
+            "surveyor_name": comp.surveyor.name
+        })
+
+    surveyors_with_info = []
+    for s in surveyors:
+        surveyors_with_info.append({
+            "surveyor_id": s.id,
+            "name": s.name,
+            "companies": [c.company_name for c in s.companies]
+        })
+
+    companies_info = [{
+        "id": c.id,
+        "company_name": c.company_name,
+        "company_id": c.company_id,
+        "email": c.email,
+        "mobile": c.mobile_number,
+        "director": c.director
+    } for c in companies]
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "license_data": data
+        "companies": companies_info,
+        "surveyors": surveyors_with_info,
+        "computers": computers_with_info,
+        "licenses": licenses_with_info
     })
 
 # The rest of the CRUD for Companies, Surveyors, Computers, Licenses remains unchanged (already provided).
