@@ -12,60 +12,64 @@
     </div>
 
     <div class="accordion" id="createAccordion">
+      <!-- Company Form -->
       <div class="accordion-item">
         <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step1">Step 1: Create Company</button></h2>
         <div id="step1" class="accordion-collapse collapse show" data-bs-parent="#createAccordion">
           <div class="accordion-body">
-            <form id="companyForm" class="row g-3">
+            <form id="companyForm" class="row g-2">
               <input class="form-control" name="company_name" placeholder="Company Name">
               <input class="form-control" name="company_id" placeholder="Company ID">
               <input class="form-control" name="email" placeholder="Email">
               <input class="form-control" name="mobile_number" placeholder="Mobile">
               <input class="form-control" name="director" placeholder="Director">
-              <button class="btn btn-primary mt-2">Create Company</button>
+              <button class="btn btn-primary">Create</button>
             </form>
           </div>
         </div>
       </div>
 
+      <!-- Surveyor Form -->
       <div class="accordion-item">
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">Step 2: Create Surveyor</button></h2>
         <div id="step2" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
           <div class="accordion-body">
-            <form id="surveyorForm" class="row g-3">
+            <form id="surveyorForm" class="row g-2">
               <input class="form-control" name="name" placeholder="Surveyor Name">
               <select class="form-select" name="company_id" id="companySelectSurveyor"></select>
-              <button class="btn btn-primary">Create Surveyor</button>
+              <button class="btn btn-primary">Create</button>
             </form>
           </div>
         </div>
       </div>
 
+      <!-- Computer Form -->
       <div class="accordion-item">
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">Step 3: Create Computer</button></h2>
         <div id="step3" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
           <div class="accordion-body">
-            <form id="computerForm" class="row g-3">
+            <form id="computerForm" class="row g-2">
               <input class="form-control" name="serial_number" placeholder="Serial Number">
               <select class="form-select" name="surveyor_id" id="surveyorSelectComputer"></select>
-              <button class="btn btn-primary">Create Computer</button>
+              <button class="btn btn-primary">Create</button>
             </form>
           </div>
         </div>
       </div>
 
+      <!-- License Form -->
       <div class="accordion-item">
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step4">Step 4: Create License</button></h2>
         <div id="step4" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
           <div class="accordion-body">
-            <form id="licenseForm" class="row g-3">
+            <form id="licenseForm" class="row g-2">
               <select class="form-select" name="computer_id" id="computerSelectLicense"></select>
               <select class="form-select" name="paid">
                 <option value="true">Paid</option>
                 <option value="false">Not Paid</option>
               </select>
               <input class="form-control" name="expire_date" type="date">
-              <button class="btn btn-success">Create License</button>
+              <button class="btn btn-success">Create</button>
             </form>
           </div>
         </div>
@@ -75,27 +79,67 @@
     <hr class="my-4">
     <h4>All Licenses</h4>
     <table class="table table-bordered">
-      <thead><tr><th>Company</th><th>Surveyor</th><th>Computer</th><th>Paid</th><th>Expires</th><th>Status</th></tr></thead>
+      <thead><tr><th>Company</th><th>Surveyor</th><th>Computer</th><th>Paid</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="licenseTable"></tbody>
     </table>
   </div>
 
   <script>
-    const fillSelects = async () => {
+    async function fillSelects() {
       const r = await fetch('/api/options');
       const { companies, surveyors, computers } = await r.json();
-      companies.forEach(c => document.getElementById('companySelectSurveyor').innerHTML += `<option value="${c.id}">${c.name}</option>`);
-      surveyors.forEach(s => document.getElementById('surveyorSelectComputer').innerHTML += `<option value="${s.id}">${s.name}</option>`);
-      computers.forEach(c => document.getElementById('computerSelectLicense').innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
+      const csel = document.getElementById('companySelectSurveyor');
+      const ssel = document.getElementById('surveyorSelectComputer');
+      const compsel = document.getElementById('computerSelectLicense');
+      csel.innerHTML = ''; ssel.innerHTML = ''; compsel.innerHTML = '';
+      companies.forEach(c => csel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+      surveyors.forEach(s => ssel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+      computers.forEach(c => compsel.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
     }
 
-    const loadTable = async () => {
+    async function loadTable() {
       const r = await fetch('/api/all');
       const data = await r.json();
-      document.getElementById('licenseTable').innerHTML = data.map(d => `
-        <tr><td>${d.company_name}</td><td>${d.surveyor_name}</td><td>${d.computer_serial_number}</td>
-        <td>${d.paid ? 'Yes' : 'No'}</td><td>${d.expire_date}</td><td>${d.status ? '✅' : '❌'}</td></tr>
-      `).join('');
+      const tbody = document.getElementById('licenseTable');
+      tbody.innerHTML = '';
+      data.forEach(d => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${d.company_name}</td>
+          <td>${d.surveyor_name}</td>
+          <td>${d.computer_serial_number}</td>
+          <td>${d.paid ? 'Yes' : 'No'}</td>
+          <td><input type="date" class="form-control form-control-sm" value="${d.expire_date}" data-id="${d.license_id}" data-type="expire_date"></td>
+          <td>${d.status ? '✅' : '❌'}</td>
+          <td>
+            <select class="form-select form-select-sm" data-id="${d.license_id}" data-type="paid">
+              <option value="true" ${d.paid ? 'selected' : ''}>Yes</option>
+              <option value="false" ${!d.paid ? 'selected' : ''}>No</option>
+            </select>
+            <button class="btn btn-warning btn-sm mt-1" onclick="updateLicense(${d.license_id})">Update</button>
+            <button class="btn btn-danger btn-sm mt-1" onclick="deleteLicense(${d.license_id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function deleteLicense(id) {
+      await fetch(`/api/delete/${id}`, { method: 'POST' });
+      await loadTable();
+    }
+
+    async function updateLicense(id) {
+      const paid = document.querySelector(`select[data-id='${id}'][data-type='paid']`).value;
+      const expire = document.querySelector(`input[data-id='${id}'][data-type='expire_date']`).value;
+      const form = new FormData();
+      form.append('paid', paid);
+      form.append('expire_date', expire);
+      await fetch(`/api/update/${id}`, {
+        method: 'POST',
+        body: form
+      });
+      await loadTable();
     }
 
     ['companyForm', 'surveyorForm', 'computerForm', 'licenseForm'].forEach(id => {
@@ -106,7 +150,10 @@
           method: 'POST',
           body: form
         });
-        if (res.ok) loadTable();
+        if (res.ok) {
+          await fillSelects();
+          await loadTable();
+        }
       });
     });
 

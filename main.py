@@ -51,26 +51,50 @@ def dashboard_page(request: Request):
         return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/api/all")
+def api_all(request: Request, db: Session = Depends(get_db)):
+    login_required(request)
+    companies = db.query(models.Company).all()
+    data = []
+
+    for company in companies:
+        for surveyor in company.surveyors:
+            for computer in surveyor.computers:
+                for license in computer.licenses:
+                    data.append({
+                        "company_id": company.id,
+                        "company_name": company.company_name,
+                        "company_code": company.company_id,
+                        "email": company.email,
+                        "mobile_number": company.mobile_number,
+                        "director": company.director,
+                        "surveyor_id": surveyor.id,
+                        "surveyor_name": surveyor.name,
+                        "computer_id": computer.id,
+                        "computer_serial_number": computer.serial_number,
+                        "license_id": license.id,
+                        "paid": license.paid,
+                        "expire_date": license.expire_date.isoformat(),
+                        "status": license.paid and license.expire_date > date.today()
+                    })
+
+    return JSONResponse(data)
+
 @app.get("/api/options")
 def get_options(request: Request, db: Session = Depends(get_db)):
     login_required(request)
-
-    companies = db.query(models.Company).all()
-    surveyors = db.query(models.Surveyor).all()
-    computers = db.query(models.Computer).all()
-
     return JSONResponse({
         "companies": [
             {"id": c.id, "name": c.company_name, "company_id": c.company_id}
-            for c in companies
+            for c in db.query(models.Company).all()
         ],
         "surveyors": [
             {"id": s.id, "name": s.name}
-            for s in surveyors
+            for s in db.query(models.Surveyor).all()
         ],
         "computers": [
-            {"id": comp.id, "serial_number": comp.serial_number}
-            for comp in computers
+            {"id": c.id, "serial_number": c.serial_number}
+            for c in db.query(models.Computer).all()
         ]
     })
 
@@ -85,9 +109,8 @@ def create_company(
     db: Session = Depends(get_db)
 ):
     login_required(request)
-
-    existing = db.query(models.Company).filter_by(company_id=company_id).first()
-    if not existing:
+    exists = db.query(models.Company).filter_by(company_id=company_id).first()
+    if not exists:
         db.add(models.Company(
             company_name=company_name,
             company_id=company_id,
@@ -96,8 +119,7 @@ def create_company(
             director=director
         ))
         db.commit()
-        return JSONResponse({"message": "Company created"})
-    return JSONResponse({"message": "Company already exists"})
+    return JSONResponse({"message": "Company processed"})
 
 @app.post("/api/create/surveyor")
 def create_surveyor(
@@ -107,23 +129,17 @@ def create_surveyor(
     db: Session = Depends(get_db)
 ):
     login_required(request)
-
-    company = db.query(models.Company).filter_by(id=company_id).first()
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
-
     surveyor = db.query(models.Surveyor).filter_by(name=name).first()
     if not surveyor:
         surveyor = models.Surveyor(name=name)
         db.add(surveyor)
         db.commit()
         db.refresh(surveyor)
-
-    if company not in surveyor.companies:
+    company = db.query(models.Company).get(company_id)
+    if company and company not in surveyor.companies:
         surveyor.companies.append(company)
         db.commit()
-
-    return JSONResponse({"message": "Surveyor created or linked"})
+    return JSONResponse({"message": "Surveyor processed"})
 
 @app.post("/api/create/computer")
 def create_computer(
@@ -133,12 +149,11 @@ def create_computer(
     db: Session = Depends(get_db)
 ):
     login_required(request)
-    existing = db.query(models.Computer).filter_by(serial_number=serial_number).first()
-    if not existing:
+    exists = db.query(models.Computer).filter_by(serial_number=serial_number).first()
+    if not exists:
         db.add(models.Computer(serial_number=serial_number, surveyor_id=surveyor_id))
         db.commit()
-        return JSONResponse({"message": "Computer created"})
-    return JSONResponse({"message": "Computer already exists"})
+    return JSONResponse({"message": "Computer processed"})
 
 @app.post("/api/create/license")
 def create_license(
@@ -149,38 +164,33 @@ def create_license(
     db: Session = Depends(get_db)
 ):
     login_required(request)
-    db.add(models.License(computer_id=computer_id, paid=paid, expire_date=expire_date))
-    db.commit()
-    return JSONResponse({"message": "License created"})
-
-@app.get("/api/all")
-def api_all(request: Request, db: Session = Depends(get_db)):
-    login_required(request)
-    companies = db.query(models.Company).all()
-    data = []
-
-    for company in companies:
-        for surveyor in company.surveyors:
-            for computer in surveyor.computers:
-                for license in computer.licenses:
-                    data.append({
-                        "company_name": company.company_name,
-                        "email": company.email,
-                        "surveyor_name": surveyor.name,
-                        "computer_serial_number": computer.serial_number,
-                        "paid": license.paid,
-                        "expire_date": license.expire_date.isoformat(),
-                        "status": license.paid and license.expire_date > date.today(),
-                        "license_id": license.id
-                    })
-    return JSONResponse(data)
+    exists = db.query(models.License).filter_by(computer_id=computer_id, expire_date=expire_date).first()
+    if not exists:
+        db.add(models.License(computer_id=computer_id, paid=paid, expire_date=expire_date))
+        db.commit()
+    return JSONResponse({"message": "License processed"})
 
 @app.post("/api/delete/{license_id}")
-def delete_entry(license_id: int, request: Request, db: Session = Depends(get_db)):
+def delete_license(license_id: int, request: Request, db: Session = Depends(get_db)):
     login_required(request)
-    license = db.query(models.License).filter_by(id=license_id).first()
-    if license:
-        db.delete(license)
+    lic = db.query(models.License).filter_by(id=license_id).first()
+    if lic:
+        db.delete(lic)
         db.commit()
-        return JSONResponse({"message": "Deleted license"})
-    raise HTTPException(status_code=404, detail="License not found")
+    return JSONResponse({"message": "License deleted"})
+
+@app.post("/api/update/{license_id}")
+def update_license(
+    license_id: int,
+    request: Request,
+    paid: bool = Form(...),
+    expire_date: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    login_required(request)
+    lic = db.query(models.License).filter_by(id=license_id).first()
+    if lic:
+        lic.paid = paid
+        lic.expire_date = expire_date
+        db.commit()
+    return JSONResponse({"message": "License updated"})
