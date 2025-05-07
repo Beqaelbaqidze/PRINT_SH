@@ -83,20 +83,22 @@ def api_all(request: Request, db: Session = Depends(get_db)):
 @app.get("/api/options")
 def get_options(request: Request, db: Session = Depends(get_db)):
     login_required(request)
+
     return JSONResponse({
         "companies": [
             {"id": c.id, "name": c.company_name, "company_id": c.company_id}
-            for c in db.query(models.Company).all()
+            for c in db.query(models.Company).filter_by(temporary=False)
         ],
         "surveyors": [
-            {"id": s.id, "name": s.name}
-            for s in db.query(models.Surveyor).all()
+            {"id": s.id, "name": s.name, "company_id": s.companies[0].id if s.companies else None}
+            for s in db.query(models.Surveyor).filter_by(temporary=False)
         ],
         "computers": [
-            {"id": c.id, "serial_number": c.serial_number}
-            for c in db.query(models.Computer).all()
+            {"id": c.id, "serial_number": c.serial_number, "surveyor_id": c.surveyor_id}
+            for c in db.query(models.Computer).filter_by(temporary=False)
         ]
     })
+
 
 @app.post("/api/create/company")
 def create_company(

@@ -8,10 +8,10 @@
 <div class="container py-4">
   <h2 class="mb-4">License Management Dashboard</h2>
 
-  <!-- Step-by-step creation flow -->
+  <!-- Step 1: Company -->
   <div class="mb-3">
     <label class="form-label">1. Select or Create Company</label>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <select id="companySelect" class="form-select"></select>
       <input type="text" id="newCompanyName" class="form-control" placeholder="New Company Name">
       <input type="text" id="newCompanyID" class="form-control" placeholder="Company ID">
@@ -22,24 +22,27 @@
     </div>
   </div>
 
+  <!-- Step 2: Surveyor -->
   <div class="mb-3">
     <label class="form-label">2. Select or Create Surveyor</label>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <select id="surveyorSelect" class="form-select" disabled></select>
       <input type="text" id="newSurveyorName" class="form-control" placeholder="New Surveyor Name">
       <button class="btn btn-primary" onclick="createSurveyor()">Add</button>
     </div>
   </div>
 
+  <!-- Step 3: Computer -->
   <div class="mb-3">
     <label class="form-label">3. Select or Create Computer</label>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <select id="computerSelect" class="form-select" disabled></select>
       <input type="text" id="newComputerSerial" class="form-control" placeholder="Serial Number">
       <button class="btn btn-primary" onclick="createComputer()">Add</button>
     </div>
   </div>
 
+  <!-- Step 4: License -->
   <div class="mb-3">
     <label class="form-label">4. Create License</label>
     <form id="licenseForm">
@@ -96,14 +99,17 @@
 
   async function populateFormSteps() {
     const { companies, surveyors, computers } = await fetchOptions();
+
     const companySelect = document.getElementById('companySelect');
     const surveyorSelect = document.getElementById('surveyorSelect');
     const computerSelect = document.getElementById('computerSelect');
 
+    // Companies
     companySelect.innerHTML = '<option value="">Select Company</option>';
     companies.forEach(c => companySelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
     if (selectedCompanyId) companySelect.value = selectedCompanyId;
 
+    // Surveyors
     if (selectedCompanyId) {
       surveyorSelect.disabled = false;
       surveyorSelect.innerHTML = '<option value="">Select Surveyor</option>';
@@ -112,6 +118,7 @@
       if (selectedSurveyorId) surveyorSelect.value = selectedSurveyorId;
     }
 
+    // Computers
     if (selectedSurveyorId) {
       computerSelect.disabled = false;
       computerSelect.innerHTML = '<option value="">Select Computer</option>';
@@ -129,8 +136,6 @@
     form.append('mobile_number', document.getElementById('newCompanyMobile').value);
     form.append('director', document.getElementById('newCompanyDirector').value);
     await fetch('/api/create/company', { method: 'POST', body: form });
-    selectedCompanyId = null;
-    localStorage.removeItem("selectedCompanyId");
     await populateFormSteps();
   }
 
@@ -185,8 +190,10 @@
     await fetch('/api/create/license', { method: 'POST', body: form });
     e.target.reset();
     await loadTable();
+    await populateFormSteps();
   });
 
+  // Init
   populateFormSteps();
   loadTable();
 </script>
