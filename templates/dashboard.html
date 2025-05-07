@@ -65,9 +65,9 @@
 
 <script>
   let globalOptions = { companies: [], surveyors: [], computers: [] };
-  let selectedCompanyId = null;
-  let selectedSurveyorId = null;
-  let selectedComputerId = null;
+  let selectedCompanyId = localStorage.getItem("selectedCompanyId") || null;
+  let selectedSurveyorId = localStorage.getItem("selectedSurveyorId") || null;
+  let selectedComputerId = localStorage.getItem("selectedComputerId") || null;
 
   async function fetchOptions() {
     const res = await fetch('/api/options');
@@ -130,11 +130,13 @@
     form.append('director', document.getElementById('newCompanyDirector').value);
     await fetch('/api/create/company', { method: 'POST', body: form });
     selectedCompanyId = null;
+    localStorage.removeItem("selectedCompanyId");
     await populateFormSteps();
   }
 
   async function createSurveyor() {
     selectedCompanyId = document.getElementById('companySelect').value;
+    localStorage.setItem("selectedCompanyId", selectedCompanyId);
     const form = new FormData();
     form.append('name', document.getElementById('newSurveyorName').value);
     form.append('company_id', selectedCompanyId);
@@ -145,6 +147,8 @@
   async function createComputer() {
     selectedCompanyId = document.getElementById('companySelect').value;
     selectedSurveyorId = document.getElementById('surveyorSelect').value;
+    localStorage.setItem("selectedCompanyId", selectedCompanyId);
+    localStorage.setItem("selectedSurveyorId", selectedSurveyorId);
     const form = new FormData();
     form.append('serial_number', document.getElementById('newComputerSerial').value);
     form.append('surveyor_id', selectedSurveyorId);
@@ -156,17 +160,20 @@
     selectedCompanyId = document.getElementById('companySelect').value;
     selectedSurveyorId = null;
     selectedComputerId = null;
+    localStorage.setItem("selectedCompanyId", selectedCompanyId);
     populateFormSteps();
   });
 
   document.getElementById('surveyorSelect').addEventListener('change', () => {
     selectedSurveyorId = document.getElementById('surveyorSelect').value;
     selectedComputerId = null;
+    localStorage.setItem("selectedSurveyorId", selectedSurveyorId);
     populateFormSteps();
   });
 
   document.getElementById('computerSelect').addEventListener('change', () => {
     selectedComputerId = document.getElementById('computerSelect').value;
+    localStorage.setItem("selectedComputerId", selectedComputerId);
   });
 
   document.getElementById('licenseForm').addEventListener('submit', async (e) => {

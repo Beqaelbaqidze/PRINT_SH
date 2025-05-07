@@ -116,10 +116,12 @@ def create_company(
             company_id=company_id,
             email=email,
             mobile_number=mobile_number,
-            director=director
+            director=director,
+            temporary=True  # ✅ Mark temporary
         ))
         db.commit()
     return JSONResponse({"message": "Company processed"})
+
 
 @app.post("/api/create/surveyor")
 def create_surveyor(
@@ -131,7 +133,7 @@ def create_surveyor(
     login_required(request)
     surveyor = db.query(models.Surveyor).filter_by(name=name).first()
     if not surveyor:
-        surveyor = models.Surveyor(name=name)
+        surveyor = models.Surveyor(name=name, temporary=True)  # ✅ Mark temporary
         db.add(surveyor)
         db.commit()
         db.refresh(surveyor)
@@ -140,6 +142,7 @@ def create_surveyor(
         surveyor.companies.append(company)
         db.commit()
     return JSONResponse({"message": "Surveyor processed"})
+
 
 @app.post("/api/create/computer")
 def create_computer(
@@ -151,9 +154,14 @@ def create_computer(
     login_required(request)
     exists = db.query(models.Computer).filter_by(serial_number=serial_number).first()
     if not exists:
-        db.add(models.Computer(serial_number=serial_number, surveyor_id=surveyor_id))
+        db.add(models.Computer(
+            serial_number=serial_number,
+            surveyor_id=surveyor_id,
+            temporary=True  # ✅ Mark temporary
+        ))
         db.commit()
     return JSONResponse({"message": "Computer processed"})
+
 
 @app.post("/api/create/license")
 def create_license(
@@ -166,9 +174,28 @@ def create_license(
     login_required(request)
     exists = db.query(models.License).filter_by(computer_id=computer_id, expire_date=expire_date).first()
     if not exists:
-        db.add(models.License(computer_id=computer_id, paid=paid, expire_date=expire_date))
+        # Final license creation
+        license = models.License(
+            computer_id=computer_id,
+            paid=paid,
+            expire_date=expire_date,
+            temporary=False  # ✅ Mark permanent
+        )
+        db.add(license)
+
+        # Set related items as not temporary
+        computer = db.query(models.Computer).filter_by(id=computer_id).first()
+        if computer:
+            computer.temporary = False
+            surveyor = computer.surveyor
+            if surveyor:
+                surveyor.temporary = False
+                for company in surveyor.companies:
+                    company.temporary = False
+
         db.commit()
     return JSONResponse({"message": "License processed"})
+
 
 @app.post("/api/delete/{license_id}")
 def delete_license(license_id: int, request: Request, db: Session = Depends(get_db)):
@@ -223,3 +250,15 @@ def verify_license(
                         })
 
     return JSONResponse({"valid": False, "reason": "No valid license found"})
+
+from datetime import datetime, timedelta
+
+@app.post("/api/cleanup_temporary")
+def cleanup_temporary(db: Session = Depends(get_db)):
+    db.query(models.License).filter_by(temporary=True).delete()
+    db.query(models.Computer).filter_by(temporary=True).delete()
+    db.query(models.Surveyor).filter_by(temporary=True).delete()
+    db.query(models.Company).filter_by(temporary=True).delete()
+    db.commit()
+    return JSONResponse({"message": "Temporary records cleaned up"})
+
