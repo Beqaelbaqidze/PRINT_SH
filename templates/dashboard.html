@@ -1,28 +1,37 @@
-
-{% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
-{% block header %}All Data Overview{% endblock %}
-{% block content %}
-<table border="1" cellpadding="6" cellspacing="0" style="width: 100%; text-align: left;">
-  <tr>
-    <th>Company Name</th>
-    <th>Company ID</th>
-    <th>Director</th>
-    <th>Surveyor Name</th>
-    <th>Computer Serial</th>
-    <th>License Paid</th>
-    <th>Expire Date</th>
-  </tr>
-  {% for row in rows %}
+<thead class="table-light">
+    <tr>
+      <th>Company Name</th>
+      <th>Company ID</th>
+      <th>Email</th>
+      <th>Mobile</th>
+      <th>Director</th>
+      <th>Surveyor Name</th>
+      <th>Computer Serial</th>
+      <th>Paid</th>
+      <th>Expire Date</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
     <tr>
       <td>{{ row.company_name }}</td>
       <td>{{ row.company_id }}</td>
+      <td>{{ row.email }}</td>
+      <td>{{ row.mobile }}</td>
       <td>{{ row.director }}</td>
       <td>{{ row.surveyor_name }}</td>
-      <td>{{ row.serial_number }}</td>
+      <td>{{ row.computer_serial }}</td>
       <td>{{ 'Yes' if row.paid else 'No' }}</td>
       <td>{{ row.expire_date }}</td>
+      <td>
+        {% if row.status %}
+          <span class="text-success">✅ Active</span>
+        {% else %}
+          <span class="text-danger">❌ Expired</span>
+        {% endif %}
+      </td>
     </tr>
-  {% endfor %}
-</table>
-{% endblock %}
+    {% endfor %}
+  </tbody>
+  

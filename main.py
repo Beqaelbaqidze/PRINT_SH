@@ -51,25 +51,30 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("logged_in"):
         return RedirectResponse("/", status_code=302)
 
-    # JOIN all related data into one flat table
-    rows = db.execute("""
-        SELECT
-            c.company_name,
-            c.company_id,
-            c.director,
-            s.name AS surveyor_name,
-            cp.serial_number,
-            l.paid,
-            l.expire_date
-        FROM companies c
-        JOIN surveyors s ON s.company_id = c.id
-        JOIN computers cp ON cp.surveyor_id = s.id
-        JOIN licenses l ON l.computer_id = cp.id
-    """).fetchall()
+    companies = db.query(models.Company).all()
+    data = []
+
+    for company in companies:
+        for surveyor in company.surveyors:
+            for computer in surveyor.computers:
+                for lic in computer.licenses:
+                    data.append({
+                        "company_name": company.company_name,
+                        "company_id": company.company_id,
+                        "email": company.email,
+                        "mobile": company.mobile_number,
+                        "director": company.director,
+                        "surveyor_name": surveyor.name,
+                        "computer_serial": computer.serial_number,
+                        "paid": lic.paid,
+                        "expire_date": lic.expire_date,
+                        "status": lic.paid and lic.expire_date > date.today()
+                    })
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "rows": rows
+        "rows": data
     })
+
 
 # The rest of the CRUD for Companies, Surveyors, Computers, Licenses remains unchanged (already provided).
