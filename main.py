@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, Path
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -23,14 +23,14 @@ def get_db():
     finally:
         db.close()
 
-# Auth Middleware
+# Login Required Decorator
 def login_required(request: Request):
     if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
-# Login / Logout
+# Login routes
 @app.get("/", response_class=HTMLResponse)
-def login_form(request: Request):
+def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
@@ -45,36 +45,28 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/")
 
-# Dashboard: Relational Join View
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, db: Session = Depends(get_db)):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
-
+# Unified Flat API Endpoint with Real Values
+@app.get("/api/all")
+def api_all(request: Request, db: Session = Depends(get_db)):
+    login_required(request)
     companies = db.query(models.Company).all()
     data = []
 
     for company in companies:
         for surveyor in company.surveyors:
             for computer in surveyor.computers:
-                for lic in computer.licenses:
+                for license in computer.licenses:
                     data.append({
                         "company_name": company.company_name,
                         "company_id": company.company_id,
                         "email": company.email,
-                        "mobile": company.mobile_number,
+                        "mobile_number": company.mobile_number,
                         "director": company.director,
                         "surveyor_name": surveyor.name,
-                        "computer_serial": computer.serial_number,
-                        "paid": lic.paid,
-                        "expire_date": lic.expire_date,
-                        "status": lic.paid and lic.expire_date > date.today()
+                        "computer_serial_number": computer.serial_number,
+                        "paid": license.paid,
+                        "expire_date": license.expire_date,
+                        "status": license.paid and license.expire_date > date.today()
                     })
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "rows": data
-    })
-
-
-# The rest of the CRUD for Companies, Surveyors, Computers, Licenses remains unchanged (already provided).
+    return JSONResponse(data)
