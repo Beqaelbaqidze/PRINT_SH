@@ -94,7 +94,11 @@ def get_options(request: Request, db: Session = Depends(get_db)):
             for c in s.companies
         ],
         "computers": [
-            {"id": comp.id, "serial_number": comp.serial_number, "surveyor_id": comp.surveyor_id}
+            {
+                "id": comp.id,
+                "serial_number": comp.serial_number,
+                "surveyor_id": comp.surveyor_id  # 🔥 this line is missing in your current version
+            }
             for comp in db.query(models.Computer).all()
         ]
     })
