@@ -22,13 +22,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # CORS for frontend JS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(SessionMiddleware, secret_key="your_secret", same_site="lax", https_only=False)
+
 
 # PostgreSQL connection
 def get_connection():
@@ -44,7 +39,8 @@ def get_connection():
 
 def login_required(request: Request):
     if not request.session or not request.session.get("logged_in"):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        return RedirectResponse("/", status_code=302)
+
 
 # ===== Routes =====
 
@@ -68,8 +64,11 @@ def logout(request: Request):
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, _: None = Depends(login_required)):
+def dashboard(request: Request, response = Depends(login_required)):
+    if isinstance(response, RedirectResponse):
+        return response
     return templates.TemplateResponse("dashboard.html", {"request": request})
+
 
 
 # === Models ===
