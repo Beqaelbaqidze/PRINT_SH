@@ -71,17 +71,20 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     if username == "admin" and password == "admin123":
         request.session["logged_in"] = True
         return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid login"})
+    return templates.TemplateResponse("dashboard.html", {"request": request, "error": "Invalid login"})
+
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/")
 
+# -------- ADMIN PANEL --------
+
 @app.get("/dashboard", response_class=HTMLResponse)
 def admin_panel(request: Request):
     if not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
+        return RedirectResponse("/")
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 # ---------- CRUD ----------
