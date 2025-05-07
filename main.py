@@ -16,13 +16,7 @@ app = FastAPI()
 
 # Middleware setup
 app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 # Static and templates setup
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -43,36 +37,35 @@ def get_connection():
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-
 @app.post("/login")
-async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "admin123":
-        request.session["user"] = username
+        request.session["logged_in"] = True
         return RedirectResponse(url="/dashboard", status_code=302)
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid login"})
+
+from fastapi import status
+
+@app.post("/api/login")
+def api_login(username: str = Form(...), password: str = Form(...)):
+    if username == "admin" and password == "admin123":
+        # ✅ In a real app, return a JWT or secure token
+        return {"token": "your_static_token"}  # Just a simple string for now
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/", status_code=302)
+    return RedirectResponse(url="/")
 
-# ----- DEPENDENCY -----
-def get_current_user(request: Request):
-    if not request.session.get("user"):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return request.session["user"]
+# -------- ADMIN PANEL --------
 
-# ----- PROTECTED ROUTES -----
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, user: str = Depends(get_current_user)):
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
-
-@app.get("/logout")
-def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse("/", status_code=302)
-
+def admin_panel(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/")
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 
