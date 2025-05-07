@@ -13,17 +13,20 @@ from starlette.middleware.sessions import SessionMiddleware
 
 
 app = FastAPI()
+
+# Middleware setup
 app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-
-
-# Static and templates
+# Static and templates setup
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
-# CORS for frontend JS
-app.add_middleware(SessionMiddleware, secret_key="your_secret", same_site="lax", https_only=False)
-
 
 # PostgreSQL connection
 def get_connection():
@@ -34,13 +37,6 @@ def get_connection():
         password="1524Elbaqa",
         database="licenses"
     )
-
-# === Routes ===
-
-def login_required(request: Request):
-    if not request.session or not request.session.get("logged_in"):
-        return RedirectResponse("/", status_code=302)
-
 
 # ===== Routes =====
 
@@ -64,11 +60,10 @@ def logout(request: Request):
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request, response = Depends(login_required)):
-    if isinstance(response, RedirectResponse):
-        return response
+def dashboard(request: Request):
+    if not request.session or not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
-
 
 
 # === Models ===
