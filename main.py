@@ -123,3 +123,94 @@ def delete_company(company_id: int, db: Session = Depends(get_db)):
     db.delete(company)
     db.commit()
     return RedirectResponse("/companies", status_code=302)
+
+@app.get("/surveyors", response_class=HTMLResponse)
+def surveyors(request: Request, db: Session = Depends(get_db)):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
+    surveyors = db.query(models.Surveyor).all()
+    return templates.TemplateResponse("surveyors.html", {"request": request, "surveyors": surveyors})
+
+@app.get("/surveyors/add", response_class=HTMLResponse)
+def add_surveyor_form(request: Request):
+    return templates.TemplateResponse("surveyor_form.html", {"request": request, "surveyor": None})
+
+@app.post("/surveyors/add")
+def add_surveyor(request: Request, name: str = Form(...), db: Session = Depends(get_db)):
+    db.add(models.Surveyor(name=name))
+    db.commit()
+    return RedirectResponse("/surveyors", status_code=302)
+
+@app.get("/surveyors/edit/{surveyor_id}", response_class=HTMLResponse)
+def edit_surveyor_form(request: Request, surveyor_id: int, db: Session = Depends(get_db)):
+    surveyor = db.query(models.Surveyor).filter_by(id=surveyor_id).first()
+    return templates.TemplateResponse("surveyor_form.html", {"request": request, "surveyor": surveyor})
+
+@app.post("/surveyors/edit/{surveyor_id}")
+def edit_surveyor(request: Request, surveyor_id: int, name: str = Form(...), db: Session = Depends(get_db)):
+    surveyor = db.query(models.Surveyor).filter_by(id=surveyor_id).first()
+    surveyor.name = name
+    db.commit()
+    return RedirectResponse("/surveyors", status_code=302)
+
+@app.get("/surveyors/delete/{surveyor_id}")
+def delete_surveyor(surveyor_id: int, db: Session = Depends(get_db)):
+    surveyor = db.query(models.Surveyor).filter_by(id=surveyor_id).first()
+    db.delete(surveyor)
+    db.commit()
+    return RedirectResponse("/surveyors", status_code=302)
+
+
+@app.get("/computers", response_class=HTMLResponse)
+def computers(request: Request, db: Session = Depends(get_db)):
+    computers = db.query(models.Computer).all()
+    return templates.TemplateResponse("computers.html", {"request": request, "computers": computers})
+
+@app.get("/computers/add", response_class=HTMLResponse)
+def computer_form(request: Request, db: Session = Depends(get_db)):
+    surveyors = db.query(models.Surveyor).all()
+    return templates.TemplateResponse("computer_form.html", {"request": request, "surveyors": surveyors})
+
+@app.post("/computers/add")
+def add_computer(serial_number: str = Form(...), surveyor_id: int = Form(...), db: Session = Depends(get_db)):
+    db.add(models.Computer(serial_number=serial_number, surveyor_id=surveyor_id))
+    db.commit()
+    return RedirectResponse("/computers", status_code=302)
+
+@app.get("/computers/delete/{computer_id}")
+def delete_computer(computer_id: int, db: Session = Depends(get_db)):
+    computer = db.query(models.Computer).filter_by(id=computer_id).first()
+    db.delete(computer)
+    db.commit()
+    return RedirectResponse("/computers", status_code=302)
+
+from datetime import date
+
+@app.get("/licenses", response_class=HTMLResponse)
+def licenses(request: Request, db: Session = Depends(get_db)):
+    licenses = db.query(models.License).all()
+    now = date.today()
+    return templates.TemplateResponse("licenses.html", {"request": request, "licenses": licenses, "now": now})
+
+@app.get("/licenses/add", response_class=HTMLResponse)
+def license_form(request: Request, db: Session = Depends(get_db)):
+    computers = db.query(models.Computer).all()
+    return templates.TemplateResponse("license_form.html", {"request": request, "computers": computers})
+
+@app.post("/licenses/add")
+def add_license(computer_id: int = Form(...), paid: str = Form(...), expire_date: str = Form(...), db: Session = Depends(get_db)):
+    license = models.License(
+        computer_id=computer_id,
+        paid=(paid.lower() == "true"),
+        expire_date=expire_date
+    )
+    db.add(license)
+    db.commit()
+    return RedirectResponse("/licenses", status_code=302)
+
+@app.get("/licenses/delete/{license_id}")
+def delete_license(license_id: int, db: Session = Depends(get_db)):
+    license = db.query(models.License).filter_by(id=license_id).first()
+    db.delete(license)
+    db.commit()
+    return RedirectResponse("/licenses", status_code=302)

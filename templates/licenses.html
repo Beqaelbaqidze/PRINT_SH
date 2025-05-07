@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Licenses{% endblock %}
+
+{% block content %}
+<h2>Licenses</h2>
+<a href="/licenses/add" class="btn btn-success mb-3">+ Add License</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Computer Serial</th>
+            <th>Paid</th>
+            <th>Expire Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lic in licenses %}
+        <tr>
+            <td>{{ lic.id }}</td>
+            <td>{{ lic.computer.serial_number }}</td>
+            <td>{{ lic.paid }}</td>
+            <td>{{ lic.expire_date }}</td>
+            <td>{{ '✅' if lic.paid and lic.expire_date > now else '❌' }}</td>
+            <td>
+                <a href="/licenses/delete/{{ lic.id }}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Computers{% endblock %}
+
+{% block content %}
+<h2>Computers</h2>
+<a href="/computers/add" class="btn btn-success mb-3">+ Add Computer</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Serial Number</th>
+            <th>Surveyor</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for computer in computers %}
+        <tr>
+            <td>{{ computer.id }}</td>
+            <td>{{ computer.serial_number }}</td>
+            <td>{{ computer.surveyor.name }}</td>
+            <td>
+                <a href="/computers/delete/{{ computer.id }}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

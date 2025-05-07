@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Add Computer{% endblock %}
+
+{% block content %}
+<h2>Add Computer</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label>Serial Number</label>
+        <input type="text" name="serial_number" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Surveyor</label>
+        <select name="surveyor_id" class="form-control">
+            {% for surveyor in surveyors %}
+            <option value="{{ surveyor.id }}">{{ surveyor.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}

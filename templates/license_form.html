@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Add License{% endblock %}
+
+{% block content %}
+<h2>Add License</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label>Computer</label>
+        <select name="computer_id" class="form-control">
+            {% for c in computers %}
+            <option value="{{ c.id }}">{{ c.serial_number }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Paid</label>
+        <select name="paid" class="form-control">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Expire Date</label>
+        <input type="date" name="expire_date" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}

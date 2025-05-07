@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if surveyor else 'Add' }} Surveyor{% endblock %}
+
+{% block content %}
+<h2>{{ 'Edit' if surveyor else 'Add' }} Surveyor</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label>Name</label>
+        <input type="text" name="name" class="form-control" value="{{ surveyor.name if surveyor else '' }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}
