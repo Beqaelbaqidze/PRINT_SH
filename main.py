@@ -11,7 +11,7 @@ import psycopg2.extras
 from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
+# app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -26,6 +26,12 @@ def get_connection():
         database="licenses"
     )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="your_super_secret_key",  # Required
+    same_site="lax",                     # Important
+    https_only=False                     # Set to True ONLY if you are using HTTPS!
+)
 # ---------- Models ----------
 class AllTablesCreate(BaseModel):
     company_name: str
