@@ -11,16 +11,35 @@
   <!-- Step-by-step creation flow -->
   <div class="mb-3">
     <label class="form-label">1. Select or Create Company</label>
-    <select id="companySelect" class="form-select"></select>
+    <div class="d-flex gap-2">
+      <select id="companySelect" class="form-select"></select>
+      <input type="text" id="newCompanyName" class="form-control" placeholder="New Company Name">
+      <input type="text" id="newCompanyID" class="form-control" placeholder="Company ID">
+      <input type="email" id="newCompanyEmail" class="form-control" placeholder="Email">
+      <input type="text" id="newCompanyMobile" class="form-control" placeholder="Mobile">
+      <input type="text" id="newCompanyDirector" class="form-control" placeholder="Director">
+      <button class="btn btn-primary" onclick="createCompany()">Add</button>
+    </div>
   </div>
+
   <div class="mb-3">
     <label class="form-label">2. Select or Create Surveyor</label>
-    <select id="surveyorSelect" class="form-select" disabled></select>
+    <div class="d-flex gap-2">
+      <select id="surveyorSelect" class="form-select" disabled></select>
+      <input type="text" id="newSurveyorName" class="form-control" placeholder="New Surveyor Name">
+      <button class="btn btn-primary" onclick="createSurveyor()">Add</button>
+    </div>
   </div>
+
   <div class="mb-3">
     <label class="form-label">3. Select or Create Computer</label>
-    <select id="computerSelect" class="form-select" disabled></select>
+    <div class="d-flex gap-2">
+      <select id="computerSelect" class="form-select" disabled></select>
+      <input type="text" id="newComputerSerial" class="form-control" placeholder="Serial Number">
+      <button class="btn btn-primary" onclick="createComputer()">Add</button>
+    </div>
   </div>
+
   <div class="mb-3">
     <label class="form-label">4. Create License</label>
     <form id="licenseForm">
@@ -45,9 +64,12 @@
 </div>
 
 <script>
+  let globalOptions = { companies: [], surveyors: [], computers: [] };
+
   async function fetchOptions() {
     const res = await fetch('/api/options');
-    return res.json();
+    globalOptions = await res.json();
+    return globalOptions;
   }
 
   async function loadTable() {
@@ -81,23 +103,51 @@
     companySelect.addEventListener('change', () => {
       surveyorSelect.disabled = false;
       const companyId = companySelect.value;
-      const filteredSurveyors = surveyors.filter(s => s.company_id == companyId);
       surveyorSelect.innerHTML = '<option value="">Select Surveyor</option>';
-      filteredSurveyors.forEach(s => surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+      surveyors.filter(s => s.company_id == companyId)
+               .forEach(s => surveyorSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
     });
 
     surveyorSelect.addEventListener('change', () => {
       computerSelect.disabled = false;
       const surveyorId = surveyorSelect.value;
-      const filteredComputers = computers.filter(c => c.surveyor_id == surveyorId);
       computerSelect.innerHTML = '<option value="">Select Computer</option>';
-      filteredComputers.forEach(c => computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
+      computers.filter(c => c.surveyor_id == surveyorId)
+               .forEach(c => computerSelect.innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
     });
+  }
+
+  async function createCompany() {
+    const form = new FormData();
+    form.append('company_name', document.getElementById('newCompanyName').value);
+    form.append('company_id', document.getElementById('newCompanyID').value);
+    form.append('email', document.getElementById('newCompanyEmail').value);
+    form.append('mobile_number', document.getElementById('newCompanyMobile').value);
+    form.append('director', document.getElementById('newCompanyDirector').value);
+    await fetch('/api/create/company', { method: 'POST', body: form });
+    await populateFormSteps();
+  }
+
+  async function createSurveyor() {
+    const form = new FormData();
+    form.append('name', document.getElementById('newSurveyorName').value);
+    form.append('company_id', document.getElementById('companySelect').value);
+    await fetch('/api/create/surveyor', { method: 'POST', body: form });
+    await populateFormSteps();
+  }
+
+  async function createComputer() {
+    const form = new FormData();
+    form.append('serial_number', document.getElementById('newComputerSerial').value);
+    form.append('surveyor_id', document.getElementById('surveyorSelect').value);
+    await fetch('/api/create/computer', { method: 'POST', body: form });
+    await populateFormSteps();
   }
 
   document.getElementById('licenseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const computerId = document.getElementById('computerSelect').value;
+    if (!computerId) return alert("Please select or create a computer first");
     const form = new FormData(e.target);
     form.append('computer_id', computerId);
     await fetch('/api/create/license', { method: 'POST', body: form });
