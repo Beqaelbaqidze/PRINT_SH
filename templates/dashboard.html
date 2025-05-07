@@ -1,7 +1,37 @@
-
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
-{% block header %}Dashboard Overview{% endblock %}
+
 {% block content %}
-  <p>Welcome to the dashboard. Use the sidebar to manage data.</p>
+<h2>Relational Overview</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Company Name</th>
+            <th>Surveyor Name</th>
+            <th>Computer Serial</th>
+            <th>Paid</th>
+            <th>Expire Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in license_data %}
+        <tr>
+            <td>{{ row.company_name }}</td>
+            <td>{{ row.surveyor_name }}</td>
+            <td>{{ row.computer_serial }}</td>
+            <td>{{ 'Yes' if row.paid else 'No' }}</td>
+            <td>{{ row.expire_date }}</td>
+            <td>
+                {% if row.status %}
+                    <span class="text-success">✅ Active</span>
+                {% else %}
+                    <span class="text-danger">❌ Expired</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
