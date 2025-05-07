@@ -46,11 +46,11 @@ def get_connection():
 def root(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
-    if not request.session.get("logged_in"):  # If the user is not logged in, redirect to the login page
-        return RedirectResponse("/login", status_code=302)
-    return templates.TemplateResponse("dashboard.html", {"request": request})  # Show the dashboard if logged in
+# @app.get("/dashboard", response_class=HTMLResponse)
+# def dashboard(request: Request):
+#     if not request.session.get("logged_in"):  # If the user is not logged in, redirect to the login page
+#         return RedirectResponse("/login", status_code=302)
+#     return templates.TemplateResponse("dashboard.html", {"request": request})  # Show the dashboard if logged in
 
 
 
@@ -60,7 +60,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     # Hardcoded credentials for example; you should use a database or hashed passwords for production
     if username == "admin" and password == "admin1234":
         request.session["logged_in"] = True  # Store the login status in the session
-        return RedirectResponse("/dashboard", status_code=302)  # Redirect to dashboard after successful login
+        return templates.TemplateResponse("dashboard.html", {"request": request})  # Redirect to dashboard
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
