@@ -9,20 +9,14 @@ from decimal import Decimal
 import psycopg2
 import psycopg2.extras
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi import Request
-
 
 app = FastAPI()
-
-# Middleware setup
 app.add_middleware(SessionMiddleware, secret_key="your_super_secret_key")
 
-
-# Static and templates setup
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# PostgreSQL connection
+# ---------- Database Connection ----------
 def get_connection():
     return psycopg2.connect(
         host="localhost",
@@ -32,39 +26,7 @@ def get_connection():
         database="licenses"
     )
 
-# ===== Routes =====
-@app.get("/", response_class=HTMLResponse)
-def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-@app.post("/login")
-def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username == "admin" and password == "admin123":
-        request.session["logged_in"] = True
-        return RedirectResponse(url="/dashboard", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid login"})
-
-
-
-
-
-@app.get("/logout")
-def logout(request: Request):
-    request.session["logged_in"] = False
-    return RedirectResponse(url="/")
-
-# -------- ADMIN PANEL --------
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def admin_panel(request: Request):
-    if not request.session.get("logged_in"):
-        return RedirectResponse("/")
-    return templates.TemplateResponse("dashboard.html", {"request": request})
-
-
-
-# === Models ===
-
+# ---------- Models ----------
 class AllTablesCreate(BaseModel):
     company_name: str
     company_id_number: str
@@ -93,19 +55,39 @@ class AllTablesUpdate(BaseModel):
     paid: bool
     expire_date: str
 
-# === CRUD ===
+# ---------- Auth Routes ----------
+@app.get("/", response_class=HTMLResponse)
+def login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
+@app.post("/login")
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    if username == "admin" and password == "admin123":
+        request.session["logged_in"] = True
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid login"})
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/")
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def admin_panel(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+# ---------- CRUD ----------
 @app.post("/all/create")
-
-def all_create(data: AllTablesCreate):
+def all_create(request: Request, data: AllTablesCreate):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
-        if not Request.session.get("logged_in"):
-             return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # Check existing
         cursor.execute("SELECT id FROM companies WHERE company_id_number = %s", (data.company_id_number,))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Company ID already exists.")
@@ -113,23 +95,18 @@ def all_create(data: AllTablesCreate):
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Machine serial already exists.")
 
-        # Insert company
         cursor.execute("""
             INSERT INTO companies (company_name, company_id_number, mobile_number, email, director, measurer)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
         """, (data.company_name, data.company_id_number, data.mobile_number, data.email, data.director, data.measurer_company))
         company_id = cursor.fetchone()['id']
 
-        # Insert computer
         cursor.execute("""
             INSERT INTO computers (machine_serial_number, measurer, company_id)
-            VALUES (%s, %s, %s)
-            RETURNING id
+            VALUES (%s, %s, %s) RETURNING id
         """, (data.machine_serial_number, data.measurer_computer, company_id))
         computer_id = cursor.fetchone()['id']
 
-        # Insert license
         cursor.execute("""
             INSERT INTO licenses (computer_id, price, paid, expire_date)
             VALUES (%s, %s, %s, %s)
@@ -144,13 +121,12 @@ def all_create(data: AllTablesCreate):
         if cursor: cursor.close()
         if conn: conn.close()
 
-
 @app.post("/all/update")
-def all_update(data: AllTablesUpdate):
+def all_update(request: Request, data: AllTablesUpdate):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
-        if not Request.session.get("logged_in"):
-            return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -178,13 +154,12 @@ def all_update(data: AllTablesUpdate):
         if cursor: cursor.close()
         if conn: conn.close()
 
-
 @app.delete("/all/delete/{company_id}")
-def all_delete(company_id: int):
+def all_delete(company_id: int, request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
-        if not Request.session.get("logged_in"):
-           return RedirectResponse("/", status_code=302)
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("DELETE FROM companies WHERE id = %s", (company_id,))
@@ -197,11 +172,10 @@ def all_delete(company_id: int):
         if cursor: cursor.close()
         if conn: conn.close()
 
-
 @app.get("/all/list")
-def get_all_data():
-    if not Request.session.get("logged_in"):
-            return RedirectResponse("/", status_code=302)
+def get_all_data(request: Request):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
         conn = get_connection()
@@ -240,11 +214,10 @@ def get_all_data():
         if cursor: cursor.close()
         if conn: conn.close()
 
-
 @app.post("/all/filter")
-def filter_data(filter: dict = Body(...)):
-    if not Request.session.get("logged_in"):
-            return RedirectResponse("/", status_code=302)
+def filter_data(request: Request, filter: dict = Body(...)):
+    if not request.session.get("logged_in"):
+        return RedirectResponse("/", status_code=302)
     conn = cursor = None
     try:
         conn = get_connection()
@@ -312,7 +285,6 @@ def filter_data(filter: dict = Body(...)):
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-
 
 @app.post("/api/verify_license")
 def verify_license(
