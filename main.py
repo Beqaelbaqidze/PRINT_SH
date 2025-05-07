@@ -44,19 +44,13 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         return RedirectResponse(url="/dashboard", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid login"})
 
-from fastapi import status
 
-@app.post("/api/login")
-def api_login(username: str = Form(...), password: str = Form(...)):
-    if username == "admin" and password == "admin123":
-        # ✅ In a real app, return a JWT or secure token
-        return {"token": "your_static_token"}  # Just a simple string for now
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
 
 
 @app.get("/logout")
 def logout(request: Request):
-    request.session.clear()
+    request.session["logged_in"] = False
     return RedirectResponse(url="/")
 
 # -------- ADMIN PANEL --------
