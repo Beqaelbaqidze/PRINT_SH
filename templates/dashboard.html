@@ -5,115 +5,114 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
-  <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center">
-      <h2>License Dashboard</h2>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>License Management Dashboard</h2>
       <a href="/logout" class="btn btn-danger">Logout</a>
     </div>
 
-    <form id="create-form" class="row g-3 mt-4">
-      <div class="col-md-4">
-        <label>Company</label>
-        <select name="company_id" id="company-select" class="form-select"></select>
+    <div class="accordion" id="createAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step1">Step 1: Create Company</button></h2>
+        <div id="step1" class="accordion-collapse collapse show" data-bs-parent="#createAccordion">
+          <div class="accordion-body">
+            <form id="companyForm" class="row g-3">
+              <input class="form-control" name="company_name" placeholder="Company Name">
+              <input class="form-control" name="company_id" placeholder="Company ID">
+              <input class="form-control" name="email" placeholder="Email">
+              <input class="form-control" name="mobile_number" placeholder="Mobile">
+              <input class="form-control" name="director" placeholder="Director">
+              <button class="btn btn-primary mt-2">Create Company</button>
+            </form>
+          </div>
+        </div>
       </div>
-      <div class="col-md-4">
-        <label>Surveyor</label>
-        <select name="surveyor_id" id="surveyor-select" class="form-select"></select>
-      </div>
-      <div class="col-md-4">
-        <label>Computer</label>
-        <select name="computer_id" id="computer-select" class="form-select"></select>
-      </div>
-      <div class="col-md-2">
-        <label>Paid</label>
-        <select name="paid" class="form-select">
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label>Expire Date</label>
-        <input type="date" name="expire_date" class="form-control" required>
-      </div>
-      <div class="col-md-2 align-self-end">
-        <button class="btn btn-primary" type="submit">Add License</button>
-      </div>
-    </form>
 
-    <table class="table table-bordered table-striped mt-5">
-      <thead>
-        <tr>
-          <th>Company</th>
-          <th>Email</th>
-          <th>Surveyor</th>
-          <th>Computer</th>
-          <th>Paid</th>
-          <th>Expire Date</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="data-body"></tbody>
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">Step 2: Create Surveyor</button></h2>
+        <div id="step2" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
+          <div class="accordion-body">
+            <form id="surveyorForm" class="row g-3">
+              <input class="form-control" name="name" placeholder="Surveyor Name">
+              <select class="form-select" name="company_id" id="companySelectSurveyor"></select>
+              <button class="btn btn-primary">Create Surveyor</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">Step 3: Create Computer</button></h2>
+        <div id="step3" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
+          <div class="accordion-body">
+            <form id="computerForm" class="row g-3">
+              <input class="form-control" name="serial_number" placeholder="Serial Number">
+              <select class="form-select" name="surveyor_id" id="surveyorSelectComputer"></select>
+              <button class="btn btn-primary">Create Computer</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step4">Step 4: Create License</button></h2>
+        <div id="step4" class="accordion-collapse collapse" data-bs-parent="#createAccordion">
+          <div class="accordion-body">
+            <form id="licenseForm" class="row g-3">
+              <select class="form-select" name="computer_id" id="computerSelectLicense"></select>
+              <select class="form-select" name="paid">
+                <option value="true">Paid</option>
+                <option value="false">Not Paid</option>
+              </select>
+              <input class="form-control" name="expire_date" type="date">
+              <button class="btn btn-success">Create License</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-4">
+    <h4>All Licenses</h4>
+    <table class="table table-bordered">
+      <thead><tr><th>Company</th><th>Surveyor</th><th>Computer</th><th>Paid</th><th>Expires</th><th>Status</th></tr></thead>
+      <tbody id="licenseTable"></tbody>
     </table>
   </div>
 
   <script>
-    async function loadOptions() {
-      const res = await fetch('/api/options');
-      const data = await res.json();
-
-      data.companies.forEach(c => {
-        document.getElementById('company-select').innerHTML += `<option value="${c.id}">${c.name}</option>`;
-      });
-
-      data.surveyors.forEach(s => {
-        document.getElementById('surveyor-select').innerHTML += `<option value="${s.id}">${s.name}</option>`;
-      });
-
-      data.computers.forEach(c => {
-        document.getElementById('computer-select').innerHTML += `<option value="${c.id}">${c.serial_number}</option>`;
-      });
+    const fillSelects = async () => {
+      const r = await fetch('/api/options');
+      const { companies, surveyors, computers } = await r.json();
+      companies.forEach(c => document.getElementById('companySelectSurveyor').innerHTML += `<option value="${c.id}">${c.name}</option>`);
+      surveyors.forEach(s => document.getElementById('surveyorSelectComputer').innerHTML += `<option value="${s.id}">${s.name}</option>`);
+      computers.forEach(c => document.getElementById('computerSelectLicense').innerHTML += `<option value="${c.id}">${c.serial_number}</option>`);
     }
 
-    async function loadTable() {
-      const res = await fetch('/api/all');
-      const rows = await res.json();
-      const tbody = document.getElementById('data-body');
-      tbody.innerHTML = "";
-      rows.forEach(r => {
-        const row = `<tr>
-          <td>${r.company_name}</td>
-          <td>${r.email}</td>
-          <td>${r.surveyor_name}</td>
-          <td>${r.computer_serial_number}</td>
-          <td>${r.paid ? 'Yes' : 'No'}</td>
-          <td>${r.expire_date}</td>
-          <td>${r.status ? '✅' : '❌'}</td>
-          <td>
-            <button onclick="deleteLicense(${r.license_id})" class="btn btn-sm btn-danger">Delete</button>
-          </td>
-        </tr>`;
-        tbody.innerHTML += row;
-      });
+    const loadTable = async () => {
+      const r = await fetch('/api/all');
+      const data = await r.json();
+      document.getElementById('licenseTable').innerHTML = data.map(d => `
+        <tr><td>${d.company_name}</td><td>${d.surveyor_name}</td><td>${d.computer_serial_number}</td>
+        <td>${d.paid ? 'Yes' : 'No'}</td><td>${d.expire_date}</td><td>${d.status ? '✅' : '❌'}</td></tr>
+      `).join('');
     }
 
-    async function deleteLicense(id) {
-      await fetch(`/api/delete/${id}`, { method: 'POST' });
-      loadTable();
-    }
-
-    document.getElementById('create-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      await fetch('/api/create', {
-        method: 'POST',
-        body: formData
+    ['companyForm', 'surveyorForm', 'computerForm', 'licenseForm'].forEach(id => {
+      document.getElementById(id).addEventListener('submit', async e => {
+        e.preventDefault();
+        const form = new FormData(e.target);
+        const res = await fetch(`/api/create/${id.replace('Form', '')}`, {
+          method: 'POST',
+          body: form
+        });
+        if (res.ok) loadTable();
       });
-      loadTable();
     });
 
-    loadOptions();
+    fillSelects();
     loadTable();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
