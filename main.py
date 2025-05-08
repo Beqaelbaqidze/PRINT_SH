@@ -267,3 +267,54 @@ def update_record(
         if conn:
             cursor.close()
             conn.close()
+
+from fastapi import Form
+
+@app.post("/api/verify_license")
+def verify_license(
+    company_name: str = Form(...),
+    company_id: str = Form(...),
+    measurer: str = Form(...),
+    machine_name: str = Form(...)
+):
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Query matching record from all tables
+        cursor.execute("""
+            SELECT lr.id, c.name as company_name, c.code as company_id, o.name as measurer, cmp.serial_number as machine_name
+            FROM license_records lr
+            JOIN companies c ON lr.company_fk = c.id
+            JOIN operators o ON lr.operator_fk = o.id
+            JOIN computers cmp ON lr.computer_fk = cmp.id
+            WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
+              AND lr.license_status = 'active'
+              AND lr.status = 'enabled'
+        """, (company_name, company_id, measurer, machine_name))
+
+        result = cursor.fetchone()
+        if result:
+            return {
+                "valid": True,
+                "company_name": result["company_name"],
+                "company_id": result["company_id"],
+                "measurer": result["measurer"],
+                "machine_name": result["machine_name"]
+            }
+        else:
+            return {
+                "valid": False,
+                "reason": "No active license found matching the provided details."
+            }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
