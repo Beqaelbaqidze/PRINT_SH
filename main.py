@@ -7,8 +7,11 @@ import psycopg2.extras
 from pydantic import BaseModel
 from datetime import date
 from fastapi import Body
-
+from starlette.middleware.sessions import SessionMiddleware
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="super_secret_key_123")
+
+
 
 # CORS for frontend
 app.add_middleware(
@@ -32,10 +35,30 @@ def get_connection():
         port=5432
     )
 
+from fastapi.responses import RedirectResponse
+
+@app.get("/", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    # Simple hardcoded credentials
+    if username == "admin" and password == "admin123":
+        request.session["user"] = username
+        return RedirectResponse(url="/dashboard", status_code=302)
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "error": "Invalid credentials"
+    })
+
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
+    if request.session.get("user") != "admin":
+        return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
+
 
 # ---------- SELECT ALL ----------
 @app.get("/api/companies")
