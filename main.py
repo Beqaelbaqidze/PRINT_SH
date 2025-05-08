@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Form
+from fastapi import FastAPI, HTTPException, Query, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,7 +49,7 @@ def logout(request: Request):
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     # Simple hardcoded credentials
-    if username == "admin" and password == "admin123":
+    if username == "Printsh" and password == "Printsh1524":
         request.session["user"] = username
         return RedirectResponse(url="/dashboard", status_code=302)
     return templates.TemplateResponse("login.html", {
@@ -60,10 +60,40 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
-    if request.session.get("user") != "admin":
+    if request.session.get("user") != "Printsh":
         return RedirectResponse("/", status_code=302)
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/api/records/filter")
+def filter_records(
+    search: str = Query("")
+):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    wildcard = f"%{search.lower()}%"
+    cursor.execute("""
+        SELECT lr.id, c.name AS company, c.director, o.name AS operator,
+               cmp.serial_number, l.paid, l.expire_date, 
+               lr.license_status, lr.status
+        FROM license_records lr
+        LEFT JOIN companies c ON lr.company_fk = c.id
+        LEFT JOIN operators o ON lr.operator_fk = o.id
+        LEFT JOIN computers cmp ON lr.computer_fk = cmp.id
+        LEFT JOIN licenses l ON lr.license_fk = l.id
+        WHERE LOWER(c.name) LIKE %s
+           OR LOWER(c.director) LIKE %s
+           OR LOWER(o.name) LIKE %s
+           OR LOWER(cmp.serial_number) LIKE %s
+           OR LOWER(lr.status) LIKE %s
+           OR LOWER(lr.license_status) LIKE %s
+        ORDER BY lr.id
+    """, [wildcard]*6)
+
+    result = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return result
 
 # ---------- SELECT ALL ----------
 @app.get("/api/companies")

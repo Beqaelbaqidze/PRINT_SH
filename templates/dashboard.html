@@ -169,6 +169,7 @@
   </div>
 
 <button id="openModal">➕ Add License</button>
+<input type="text" id="filterInput" placeholder="Search..." style="padding: 10px; margin-bottom: 20px; width: 300px; border: 2px solid #000;" />
 
 <table id="recordTable">
   <thead>
@@ -235,6 +236,43 @@
 </div>
 
 <script>
+  $("#filterInput").on("input", function () {
+  const search = $(this).val();
+  const endpoint = search.trim() ? `/api/records/filter?search=${encodeURIComponent(search)}` : "/api/records";
+
+  $.get(endpoint, function (data) {
+    let rows = "";
+    data.forEach(r => {
+      rows += `<tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
+        <td>${r.id}</td>
+        <td>${r.company}</td>
+        <td>${r.director}</td>
+        <td>${r.operator}</td>
+        <td>${r.serial_number}</td>
+        <td>
+          <select class="edit-paid" disabled>
+            <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
+            <option value="false" ${!r.paid ? "selected" : ""}>No</option>
+          </select>
+        </td>
+        <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled /></td>
+        <td>
+          <select class="edit-status" disabled>
+            <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
+            <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
+          </select>
+        </td>
+        <td>${r.license_status}</td>
+        <td class="action-buttons">
+          <button class="edit-btn">Edit</button>
+        </td>
+      </tr>`;
+    });
+
+    $("#recordTable tbody").html(rows);
+  });
+});
+
   function loadRecords() {
     $.get("/api/records", function (data) {
       let rows = "";
