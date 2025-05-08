@@ -41,6 +41,11 @@ from fastapi.responses import RedirectResponse
 def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/", status_code=302)
+
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
     # Simple hardcoded credentials
