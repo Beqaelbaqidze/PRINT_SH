@@ -281,37 +281,41 @@
     $.get("/api/records", function (data) {
       let rows = "";
       data.forEach(r => {
-        rows += `<tr data-id="${r.id}" data-paid="${r.paid}" data-expire="${r.expire_date}" data-status="${r.status}">
-          <td>${r.id}</td>
-          <td>${r.company}</td>
-          <td>${r.director}</td>
-          <td>${r.operator}</td>
-          <td>${r.serial_number}</td>
-          <td>
-            <select class="edit-paid" disabled>
-              <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
-              <option value="false" ${!r.paid ? "selected" : ""}>No</option>
-            </select>
-          </td>
-          <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled /></td>
-          <td>
-            <select class="edit-status" disabled>
-              <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
-              <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
-            </select>
-          </td>
-          <td>
-  <select class="edit-editpdf" disabled>
-    <option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option>
-    <option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option>
-  </select>
-</td>
-
-          <td>${r.license_status}</td>
-          <td class="action-buttons">
-            <button class="edit-btn">Edit</button>
-          </td>
-        </tr>`;
+        rows += `<tr 
+  data-id="${r.id}" 
+  data-paid="${r.paid}" 
+  data-expire="${r.expire_date}" 
+  data-status="${r.status}"
+  data-edit_pdf="${r.edit_pdf}">
+  <td>${r.id}</td>
+  <td>${r.company}</td>
+  <td>${r.director}</td>
+  <td>${r.operator}</td>
+  <td>${r.serial_number}</td>
+  <td>
+    <select class="edit-paid" disabled>
+      <option value="true" ${r.paid ? "selected" : ""}>Yes</option>
+      <option value="false" ${!r.paid ? "selected" : ""}>No</option>
+    </select>
+  </td>
+  <td><input type="date" class="edit-expire" value="${r.expire_date}" disabled /></td>
+  <td>
+    <select class="edit-status" disabled>
+      <option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option>
+      <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
+    </select>
+  </td>
+  <td>${r.license_status}</td>
+  <td>
+    <select class="edit-editpdf" disabled>
+      <option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option>
+      <option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option>
+    </select>
+  </td>
+  <td class="action-buttons">
+    <button class="edit-btn">Edit</button>
+  </td>
+</tr>`;
       });
 
       $("#recordTable tbody").html(rows);
