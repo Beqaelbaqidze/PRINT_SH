@@ -141,7 +141,7 @@ def get_records():
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
-        SELECT lr.id, c.name  AS company, c.director AS director, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status
+        SELECT lr.id, c.name  AS company, c.director AS director, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status, l.edit_pdf
         FROM license_records lr
         LEFT JOIN companies c ON lr.company_fk = c.id
         LEFT JOIN operators o ON lr.operator_fk = o.id
@@ -274,6 +274,7 @@ def update_record(
         SELECT license_fk FROM license_records WHERE id = %s
     )
 """, (paid, expire_date, edit_pdf, record_id))
+
 
 
         # Update license_records status
