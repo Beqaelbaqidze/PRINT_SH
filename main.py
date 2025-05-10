@@ -74,8 +74,8 @@ def filter_records(
     wildcard = f"%{search.lower()}%"
     cursor.execute("""
         SELECT lr.id, c.name AS company, c.director, o.name AS operator,
-               cmp.serial_number, l.paid, l.expire_date, 
-               lr.license_status, lr.status
+            cmp.serial_number, l.paid, l.expire_date, l.edit_pdf,
+            lr.license_status, lr.status
         FROM license_records lr
         LEFT JOIN companies c ON lr.company_fk = c.id
         LEFT JOIN operators o ON lr.operator_fk = o.id
@@ -244,13 +244,16 @@ def register_license(data: LicenseRegistration):
             conn.close()
 
 
+
 @app.post("/api/update-record")
 def update_record(
     record_id: int = Body(...),
     paid: bool = Body(...),
     expire_date: date = Body(...),
-    status: str = Body(...)
+    status: str = Body(...),
+    edit_pdf: bool = Body(...)
 ):
+
     conn = None
     try:
         conn = get_connection()
@@ -263,13 +266,15 @@ def update_record(
 
         # Update license table
         cursor.execute("""
-            UPDATE licenses
-            SET paid = %s,
-                expire_date = %s
-            WHERE id = (
-                SELECT license_fk FROM license_records WHERE id = %s
-            )
-        """, (paid, expire_date, record_id))
+    UPDATE licenses
+    SET paid = %s,
+        expire_date = %s,
+        edit_pdf = %s
+    WHERE id = (
+        SELECT license_fk FROM license_records WHERE id = %s
+    )
+""", (paid, expire_date, edit_pdf, record_id))
+
 
         # Update license_records status
         # Final license status logic
@@ -319,11 +324,14 @@ def verify_license(
 
         # Query matching record from all tables
         cursor.execute("""
-            SELECT lr.id, c.name as company_name, c.code as company_id, o.name as measurer, cmp.serial_number as machine_name
+            SELECT lr.id, c.name as company_name, c.code as company_id, 
+                   o.name as measurer, cmp.serial_number as machine_name,
+                   l.edit_pdf
             FROM license_records lr
             JOIN companies c ON lr.company_fk = c.id
             JOIN operators o ON lr.operator_fk = o.id
             JOIN computers cmp ON lr.computer_fk = cmp.id
+            JOIN licenses l ON lr.license_fk = l.id
             WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
               AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
               AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
@@ -339,7 +347,8 @@ def verify_license(
                 "company_name": result["company_name"],
                 "company_id": result["company_id"],
                 "measurer": result["measurer"],
-                "machine_name": result["machine_name"]
+                "machine_name": result["machine_name"],
+                "edit_pdf": result["edit_pdf"]
             }
         else:
             return {

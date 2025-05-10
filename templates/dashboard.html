@@ -186,6 +186,7 @@
       <th>Expire Date</th>
       <th>Status</th>
       <th>License Status</th>
+      <th>Edit PDF</th>
       <th>Action</th>
     </tr>
   </thead>
@@ -299,6 +300,13 @@
               <option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option>
             </select>
           </td>
+          <td>
+  <select class="edit-editpdf" disabled>
+    <option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option>
+    <option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option>
+  </select>
+</td>
+
           <td>${r.license_status}</td>
           <td class="action-buttons">
             <button class="edit-btn">Edit</button>
@@ -312,7 +320,8 @@
 
   $("#recordTable").on("click", ".edit-btn", function () {
     const row = $(this).closest("tr");
-    row.find(".edit-paid, .edit-expire, .edit-status").prop("disabled", false);
+    row.find(".edit-paid, .edit-expire, .edit-status, .edit-editpdf").prop("disabled", false);
+
     row.find(".action-buttons").html(`
       <button class="save-btn">Save</button>
       <button class="cancel-btn">Cancel</button>
@@ -322,6 +331,9 @@
   $("#recordTable").on("click", ".cancel-btn", function () {
     const row = $(this).closest("tr");
     const paid = row.data("paid") === "true";
+    const edit_pdf = row.data("edit_pdf") === "true";
+row.find(".edit-editpdf").val(edit_pdf ? "true" : "false");
+
     row.find(".edit-paid").val(paid ? "true" : "false");
     row.find(".edit-expire").val(row.data("expire"));
     row.find(".edit-status").val(row.data("status"));
@@ -335,12 +347,15 @@
     const paid = row.find(".edit-paid").val() === "true";
     const expire_date = row.find(".edit-expire").val();
     const status = row.find(".edit-status").val();
+    const edit_pdf = row.find(".edit-editpdf").val() === "true";
+
+
 
     $.ajax({
       url: "/api/update-record",
       type: "POST",
       contentType: "application/json",
-      data: JSON.stringify({ record_id: id, paid, expire_date, status }),
+      data: JSON.stringify({ record_id: id, paid, expire_date, status, edit_pdf }),
       success: loadRecords,
       error: function () {
         alert("❌ Update failed.");
