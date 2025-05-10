@@ -74,8 +74,8 @@ def filter_records(
     wildcard = f"%{search.lower()}%"
     cursor.execute("""
         SELECT lr.id, c.name AS company, c.director, o.name AS operator,
-            cmp.serial_number, l.paid, l.expire_date, l.edit_pdf,
-            lr.license_status, lr.status
+                cmp.serial_number, l.paid, l.expire_date, l.edit_pdf,
+                lr.license_status, lr.status
         FROM license_records lr
         LEFT JOIN companies c ON lr.company_fk = c.id
         LEFT JOIN operators o ON lr.operator_fk = o.id
@@ -141,7 +141,7 @@ def get_records():
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("""
-        SELECT lr.id, c.name  AS company, c.director AS director, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status, l.edit_pdf
+        SELECT lr.id, c.name  AS company, c.director AS director, o.name AS operator, cmp.serial_number, l.paid, l.expire_date, lr.license_status, lr.status
         FROM license_records lr
         LEFT JOIN companies c ON lr.company_fk = c.id
         LEFT JOIN operators o ON lr.operator_fk = o.id
@@ -244,7 +244,6 @@ def register_license(data: LicenseRegistration):
             conn.close()
 
 
-
 @app.post("/api/update-record")
 def update_record(
     record_id: int = Body(...),
@@ -253,6 +252,7 @@ def update_record(
     status: str = Body(...),
     edit_pdf: bool = Body(...)
 ):
+
 
     conn = None
     try:
@@ -274,7 +274,6 @@ def update_record(
         SELECT license_fk FROM license_records WHERE id = %s
     )
 """, (paid, expire_date, edit_pdf, record_id))
-
 
 
         # Update license_records status
@@ -326,8 +325,8 @@ def verify_license(
         # Query matching record from all tables
         cursor.execute("""
             SELECT lr.id, c.name as company_name, c.code as company_id, 
-                   o.name as measurer, cmp.serial_number as machine_name,
-                   l.edit_pdf
+                o.name as measurer, cmp.serial_number as machine_name,
+                l.edit_pdf
             FROM license_records lr
             JOIN companies c ON lr.company_fk = c.id
             JOIN operators o ON lr.operator_fk = o.id
@@ -350,6 +349,7 @@ def verify_license(
                 "measurer": result["measurer"],
                 "machine_name": result["machine_name"],
                 "edit_pdf": result["edit_pdf"]
+
             }
         else:
             return {
