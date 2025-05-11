@@ -365,15 +365,17 @@ def verify_license(
             conn.close()
 
 
-@app.get("/api/operators/by-machine")
+from fastapi.responses import PlainTextResponse
+
+@app.get("/api/operators/by-machine", response_class=PlainTextResponse)
 def get_operators_by_machine(machine_name: str = Query(...)):
     conn = None
     try:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT DISTINCT o.name AS operator
+            SELECT DISTINCT o.name
             FROM license_records lr
             JOIN operators o ON lr.operator_fk = o.id
             JOIN computers cmp ON lr.computer_fk = cmp.id
@@ -382,8 +384,9 @@ def get_operators_by_machine(machine_name: str = Query(...)):
               AND lr.status = 'enabled'
         """, (machine_name,))
 
-        operators = [row['operator'] for row in cursor.fetchall()]
-        return {"operators": operators}
+        rows = cursor.fetchall()
+        # Return as plain text (one per line)
+        return "\n".join([row[0] for row in rows])
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -392,3 +395,4 @@ def get_operators_by_machine(machine_name: str = Query(...)):
         if conn:
             cursor.close()
             conn.close()
+
