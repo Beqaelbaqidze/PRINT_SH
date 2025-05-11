@@ -363,3 +363,32 @@ def verify_license(
         if conn:
             cursor.close()
             conn.close()
+
+
+@app.get("/api/operators/by-machine")
+def get_operators_by_machine(machine_name: str = Query(...)):
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("""
+            SELECT DISTINCT o.name AS operator
+            FROM license_records lr
+            JOIN operators o ON lr.operator_fk = o.id
+            JOIN computers cmp ON lr.computer_fk = cmp.id
+            WHERE LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
+              AND lr.license_status = 'active'
+              AND lr.status = 'enabled'
+        """, (machine_name,))
+
+        operators = [row['operator'] for row in cursor.fetchall()]
+        return {"operators": operators}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
