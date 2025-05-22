@@ -324,19 +324,18 @@ def create_logs_table_if_not_exists(conn):
         """)
         conn.commit()
 
-def log_request(conn, message, error_detail=None):
+def log_request(conn, message: str, error_detail: str = None):
     try:
-        create_logs_table_if_not_exists(conn)
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO logs (endpoint, method, message, error_detail)
                 VALUES (%s, %s, %s, %s)
-            """, (
-                "/api/verify_license", "POST", message, error_detail
-            ))
+            """, ("/api/verify_license", "POST", message, error_detail))
             conn.commit()
     except Exception as e:
         print("⚠️ Logging failed:", e)
+
+
 
 @app.post("/api/verify_license")
 def verify_license(
@@ -387,7 +386,7 @@ def verify_license(
             }
 
     except Exception as e:
-        log_request(conn, "❌ License verification exception", str(e))
+        log_request(conn, "License verification exception", str(e))
         raise HTTPException(status_code=500, detail="Internal Server Error. Logged.")
     finally:
         if cursor:
