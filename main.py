@@ -324,6 +324,19 @@ def create_logs_table_if_not_exists(conn):
         """)
         conn.commit()
 
+def log_request(conn, message, error_detail=None):
+    try:
+        create_logs_table_if_not_exists(conn)
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO logs (endpoint, method, message, error_detail)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                "/api/verify_license", "POST", message, error_detail
+            ))
+            conn.commit()
+    except Exception as e:
+        print("⚠️ Logging failed:", e)
 
 @app.post("/api/verify_license")
 def verify_license(
@@ -336,7 +349,6 @@ def verify_license(
     cursor = None
     try:
         conn = get_connection()
-        create_logs_table_if_not_exists(conn)  # Ensure logs table exists
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cursor.execute("""
@@ -358,6 +370,7 @@ def verify_license(
 
         result = cursor.fetchone()
         if result:
+            log_request(conn, "✅ License verified")
             return {
                 "valid": True,
                 "company_name": result["company_name"],
@@ -367,30 +380,15 @@ def verify_license(
                 "edit_pdf": result["edit_pdf"]
             }
         else:
+            log_request(conn, "❌ License verification failed", "No active license matched")
             return {
                 "valid": False,
                 "reason": "No active license found matching the provided details."
             }
 
     except Exception as e:
-        try:
-            if conn:
-                create_logs_table_if_not_exists(conn)  # Ensure table exists again if reconnecting
-                with conn.cursor() as log_cursor:
-                    log_cursor.execute("""
-                        INSERT INTO logs (endpoint, method, message, error_detail)
-                        VALUES (%s, %s, %s, %s)
-                    """, (
-                        "/api/verify_license", "POST",
-                        "License verification failed.",
-                        str(e)
-                    ))
-                    conn.commit()
-        except Exception as log_error:
-            print("⚠️ Logging failed:", log_error)
-
+        log_request(conn, "❌ License verification exception", str(e))
         raise HTTPException(status_code=500, detail="Internal Server Error. Logged.")
-
     finally:
         if cursor:
             cursor.close()
