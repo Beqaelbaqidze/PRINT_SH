@@ -112,6 +112,7 @@
     .modal-content h2 {
       margin-top: 0;
     }
+    
 
     .close-modal {
       position: absolute;
@@ -158,6 +159,53 @@
     form button[type="submit"]:hover {
       background-color: #2a65b1;
     }
+    /* Specific styling for Logs Modal */
+#logsModal .modal-content {
+  width: 90%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 30px;
+}
+
+#logsModal h2 {
+  color: #333;
+  font-size: 24px;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+#logsModal table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+#logsModal th,
+#logsModal td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+#logsModal th {
+  background-color: #f0f0f0;
+  color: #555;
+}
+
+#logsModal tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+#logsModal tr:hover {
+  background-color: #f2f7ff;
+}
+
+#logsModal td[title] {
+  cursor: help;
+}
+
   </style>
 </head>
 <body>
