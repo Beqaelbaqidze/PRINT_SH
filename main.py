@@ -310,6 +310,21 @@ def update_record(
 
 from fastapi import Form
 
+def create_logs_table_if_not_exists(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS logs (
+                id SERIAL PRIMARY KEY,
+                endpoint TEXT,
+                method TEXT,
+                message TEXT,
+                error_detail TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+
+
 @app.post("/api/verify_license")
 def verify_license(
     company_name: str = Form(...),
@@ -318,11 +333,12 @@ def verify_license(
     machine_name: str = Form(...)
 ):
     conn = None
+    cursor = None
     try:
         conn = get_connection()
+        create_logs_table_if_not_exists(conn)  # Ensure logs table exists
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # Query matching record from all tables
         cursor.execute("""
             SELECT lr.id, c.name as company_name, c.code as company_id, 
                 o.name as measurer, cmp.serial_number as machine_name,
@@ -349,7 +365,6 @@ def verify_license(
                 "measurer": result["measurer"],
                 "machine_name": result["machine_name"],
                 "edit_pdf": result["edit_pdf"]
-
             }
         else:
             return {
@@ -358,12 +373,29 @@ def verify_license(
             }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if conn:
-            cursor.close()
-            conn.close()
+        try:
+            if conn:
+                create_logs_table_if_not_exists(conn)  # Ensure table exists again if reconnecting
+                with conn.cursor() as log_cursor:
+                    log_cursor.execute("""
+                        INSERT INTO logs (endpoint, method, message, error_detail)
+                        VALUES (%s, %s, %s, %s)
+                    """, (
+                        "/api/verify_license", "POST",
+                        "License verification failed.",
+                        str(e)
+                    ))
+                    conn.commit()
+        except Exception as log_error:
+            print("⚠️ Logging failed:", log_error)
 
+        raise HTTPException(status_code=500, detail="Internal Server Error. Logged.")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 from fastapi.responses import PlainTextResponse
 
@@ -429,6 +461,27 @@ def autofill_from_machine(machine_name: str = Query(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
+
+
+@app.get("/api/logs")
+def get_logs():
+    conn = None
+    try:
+        conn = get_connection()
+        create_logs_table_if_not_exists(conn)  # Make sure table exists
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("SELECT * FROM logs ORDER BY created_at DESC")
+        logs = cursor.fetchall()
+        return {"logs": logs}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {str(e)}")
 
     finally:
         if conn:

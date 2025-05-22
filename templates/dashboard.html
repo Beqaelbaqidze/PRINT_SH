@@ -163,9 +163,13 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h2>License Records</h2>
-    <a href="/logout">
-      <button style="background:#dc3545; color:white;">Logout</button>
+    <div>
+      <button id="viewLogsBtn">📜 View Logs</button>
+      <a href="/logout">
+      <button style="background:#dc3545; color:white; height: 40px;">Logout</button>
     </a>
+    </div>
+    
   </div>
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -238,8 +242,51 @@
     </form>
   </div>
 </div>
+<!-- Logs Modal -->
+<div id="logsModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" id="closeLogsModal">&times;</span>
+    <h2>API Logs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Endpoint</th>
+          <th>Method</th>
+          <th>Message</th>
+          <th>Error Detail</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="logsTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
 
 <script>
+  $("#viewLogsBtn").on("click", function () {
+  $.get("/api/logs", function (response) {
+    let logs = response.logs || [];
+    let html = logs.map(log => `
+      <tr>
+        <td>${log.id}</td>
+        <td>${log.endpoint}</td>
+        <td>${log.method}</td>
+        <td>${log.message}</td>
+        <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.error_detail}">${log.error_detail}</td>
+        <td>${new Date(log.created_at).toLocaleString()}</td>
+      </tr>
+    `).join("");
+    $("#logsTableBody").html(html);
+    $("#logsModal").fadeIn();
+  }).fail(() => {
+    alert("❌ Failed to load logs");
+  });
+});
+
+$("#closeLogsModal").on("click", () => $("#logsModal").fadeOut());
+
   $("#filterInput").on("input", function () {
   const search = $(this).val();
   const endpoint = search.trim() ? `/api/records/filter?search=${encodeURIComponent(search)}` : "/api/records";
