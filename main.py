@@ -324,18 +324,18 @@ def create_logs_table_if_not_exists(conn):
         """)
         conn.commit()
 
-def log_request(conn, message: str, error_detail: str = None):
+def log_request(conn, message: str, error_detail: str = None, company_name: str = None, machine_name: str = None):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO logs (endpoint, method, message, error_detail)
-                VALUES (%s, %s, %s, %s)
-            """, ("/api/verify_license", "POST", message, error_detail))
+                INSERT INTO logs (endpoint, method, message, error_detail, company_name, machine_name)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                "/api/verify_license", "POST", message, error_detail, company_name, machine_name
+            ))
             conn.commit()
     except Exception as e:
         print("⚠️ Logging failed:", e)
-
-
 
 @app.post("/api/verify_license")
 def verify_license(
@@ -369,7 +369,7 @@ def verify_license(
 
         result = cursor.fetchone()
         if result:
-            log_request(conn, "✅ License verified")
+            log_request(conn, "✅ License verified", None, result["company_name"], result["machine_name"])
             return {
                 "valid": True,
                 "company_name": result["company_name"],
@@ -379,14 +379,14 @@ def verify_license(
                 "edit_pdf": result["edit_pdf"]
             }
         else:
-            log_request(conn, "❌ License verification failed", "No active license matched")
+            log_request(conn, "❌ License verification failed", "No active license matched", company_name, machine_name)
             return {
                 "valid": False,
                 "reason": "No active license found matching the provided details."
             }
 
     except Exception as e:
-        log_request(conn, "License verification exception", str(e))
+        log_request(conn, "❌ License verification exception", str(e), company_name, machine_name)
         raise HTTPException(status_code=500, detail="Internal Server Error. Logged.")
     finally:
         if cursor:
@@ -471,15 +471,16 @@ def get_logs():
     cursor = None
     try:
         conn = get_connection()
-        create_logs_table_if_not_exists(conn)
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM logs ORDER BY created_at DESC")
+        cursor.execute("""
+            SELECT id, endpoint, method, message, error_detail, company_name, machine_name, created_at
+            FROM logs
+            ORDER BY created_at DESC
+        """)
         logs = cursor.fetchall()
         return {"logs": logs}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {str(e)}")
-
     finally:
         if cursor:
             cursor.close()

@@ -249,14 +249,19 @@
     <h2>API Logs</h2>
     <table>
       <thead>
-        <tr>
-          <th>ID</th>
-          <th>Endpoint</th>
-          <th>Method</th>
-          <th>Message</th>
-          <th>Error Detail</th>
-          <th>Time</th>
-        </tr>
+       <thead>
+  <tr>
+    <th>ID</th>
+    <th>Endpoint</th>
+    <th>Method</th>
+    <th>Message</th>
+    <th>Error Detail</th>
+    <th>Company</th>
+    <th>Machine</th>
+    <th>Time</th>
+  </tr>
+</thead>
+
       </thead>
       <tbody id="logsTableBody"></tbody>
     </table>
@@ -275,6 +280,8 @@
         <td>${log.method}</td>
         <td>${log.message}</td>
         <td style="max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.error_detail}">${log.error_detail}</td>
+        <td>${log.company_name || ''}</td>
+        <td>${log.machine_name || ''}</td>
         <td>${new Date(log.created_at).toLocaleString()}</td>
       </tr>
     `).join("");
