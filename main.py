@@ -469,11 +469,11 @@ def autofill_from_machine(machine_name: str = Query(...)):
 @app.get("/api/logs")
 def get_logs():
     conn = None
+    cursor = None
     try:
         conn = get_connection()
-        create_logs_table_if_not_exists(conn)  # Make sure table exists
+        create_logs_table_if_not_exists(conn)
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
         cursor.execute("SELECT * FROM logs ORDER BY created_at DESC")
         logs = cursor.fetchall()
         return {"logs": logs}
@@ -482,6 +482,7 @@ def get_logs():
         raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {str(e)}")
 
     finally:
-        if conn:
+        if cursor:
             cursor.close()
+        if conn:
             conn.close()
