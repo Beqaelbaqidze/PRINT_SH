@@ -331,7 +331,7 @@
     <td style="max-width:500px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.error_detail}">${log.error_detail}</td>
     <td>${log.company_name || ''}</td>
     <td>${log.machine_name || ''}</td>
-    <td style="max-width:500px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.request_info}">${log.request_info}</td>
+    <td style="max-width:500px; white-space:wrap; overflow:hidden; text-overflow:ellipsis;" title="${log.request_info}">${log.request_info}</td>
     <td>${new Date(log.created_at).toLocaleString()}</td>
   </tr>
 `).join("");
