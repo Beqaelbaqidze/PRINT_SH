@@ -73,7 +73,7 @@ def filter_records(
 
     wildcard = f"%{search.lower()}%"
     cursor.execute("""
-        SELECT lr.id, c.name AS company, c.director, o.name AS operator,
+        SELECT lr.id, c.name AS company, c.director, o.name AS operator, c.mobile AS phone,
                 cmp.serial_number, l.paid, l.expire_date, l.edit_pdf,
                 lr.license_status, lr.status
         FROM license_records lr
