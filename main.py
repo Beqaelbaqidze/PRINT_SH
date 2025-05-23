@@ -482,7 +482,7 @@ def get_logs():
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
-            SELECT id, endpoint, method, message, error_detail, company_name, machine_name, created_at
+            SELECT id, endpoint, method, message, error_detail, company_name, machine_name, request_info, created_at
             FROM logs
             ORDER BY created_at DESC
         """)
