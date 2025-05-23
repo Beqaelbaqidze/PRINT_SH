@@ -306,6 +306,7 @@
     <th>Error Detail</th>
     <th>Company</th>
     <th>Machine</th>
+    <th>Request Info</th>
     <th>Time</th>
   </tr>
 </thead>
@@ -322,17 +323,20 @@
   $.get("/api/logs", function (response) {
     let logs = response.logs || [];
     let html = logs.map(log => `
-      <tr>
-        <td>${log.id}</td>
-        <td>${log.endpoint}</td>
-        <td>${log.method}</td>
-        <td>${log.message}</td>
-        <td style="max-width:500px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.error_detail}">${log.error_detail}</td>
-        <td>${log.company_name || ''}</td>
-        <td>${log.machine_name || ''}</td>
-        <td>${new Date(log.created_at).toLocaleString()}</td>
-      </tr>
-    `).join("");
+  <tr>
+    <td>${log.id}</td>
+    <td>${log.endpoint}</td>
+    <td>${log.method}</td>
+    <td>${log.message}</td>
+    <td style="max-width:500px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.error_detail}">${log.error_detail}</td>
+    <td>${log.company_name || ''}</td>
+    <td>${log.machine_name || ''}</td>
+    <td style="max-width:500px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${log.request_info}">${log.request_info}</td>
+    <td>${new Date(log.created_at).toLocaleString()}</td>
+  </tr>
+`).join("");
+
+
     $("#logsTableBody").html(html);
     $("#logsModal").fadeIn();
   }).fail(() => {
