@@ -324,21 +324,25 @@ def create_logs_table_if_not_exists(conn):
         """)
         conn.commit()
 
-def log_request(conn, message: str, error_detail: str = None, company_name: str = None, machine_name: str = None):
+def log_request(conn, message: str, error_detail: str = None, company_name: str = None, machine_name: str = None, request_info: str = None):
     try:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO logs (endpoint, method, message, error_detail, company_name, machine_name)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO logs (endpoint, method, message, error_detail, company_name, machine_name, request_info)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                "/api/verify_license", "POST", message, error_detail, company_name, machine_name
+                "/api/verify_license", "POST", message, error_detail, company_name, machine_name, request_info
             ))
             conn.commit()
     except Exception as e:
         print("⚠️ Logging failed:", e)
 
+
+
+
 @app.post("/api/verify_license")
 def verify_license(
+    request: Request,
     company_name: str = Form(...),
     company_id: str = Form(...),
     measurer: str = Form(...),
@@ -346,6 +350,10 @@ def verify_license(
 ):
     conn = None
     cursor = None
+
+    # Capture form data as a string for logging
+    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}"
+
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -369,7 +377,7 @@ def verify_license(
 
         result = cursor.fetchone()
         if result:
-            log_request(conn, "✅ License verified", None, result["company_name"], result["machine_name"])
+            log_request(conn, "✅ License verified", None, result["company_name"], result["machine_name"], request_info)
             return {
                 "valid": True,
                 "company_name": result["company_name"],
@@ -379,20 +387,21 @@ def verify_license(
                 "edit_pdf": result["edit_pdf"]
             }
         else:
-            log_request(conn, "❌ License verification failed", "No active license matched", company_name, machine_name)
+            log_request(conn, "❌ License verification failed", "No active license matched", company_name, machine_name, request_info)
             return {
                 "valid": False,
                 "reason": "No active license found matching the provided details."
             }
 
     except Exception as e:
-        log_request(conn, "❌ License verification exception", str(e), company_name, machine_name)
+        log_request(conn, "❌ License verification exception", str(e), company_name, machine_name, request_info)
         raise HTTPException(status_code=500, detail="Internal Server Error. Logged.")
     finally:
         if cursor:
             cursor.close()
         if conn:
             conn.close()
+
 
 from fastapi.responses import PlainTextResponse
 
