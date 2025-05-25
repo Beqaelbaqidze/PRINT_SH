@@ -35,9 +35,10 @@
       padding: 20px;
     }
 
-    video {
+    iframe {
       width: 100%;
       height: calc(100vh - 100px);
+      border: none;
     }
   </style>
 </head>
@@ -46,41 +47,33 @@
   <div id="tree">
     <h3>ვიდეოების სია</h3>
     <ul>
-      <li data-file="0_შესავალი.mp4">შესავალი</li>
-      <li data-file="1_არქიკადიდან DXF ფაილის შექმნა და გისში შეტანა.mp4">არქიკადიდან DXF ფაილის შექმნა და გისში შეტანა - გაკვეთილი 1</li>
-      <li data-file="2_ფენების მომზადება და ატრიბუტების შევსება.mp4">ფენების მომზადება და ატრიბუტების შევსება - გაკვეთილი 2</li>
-      <li data-file="3_კოორდინირება.mp4">კოორდინირება - გაკვეთილი 3</li>
-      <li data-file="4_ნახაზის დამზადება.mp4">ნახაზის დამზადება - გაკვეთილი 4</li>
+      <li data-file="1_qUTizzePZQKJ7KoX-Ae1v11E-6tVMkV">შესავალი</li>
+      <li data-file="13fD8RGc3muBY_gGiE8BBIwGweJmiGjul">გაკვეთილი 1</li>
+      <li data-file="17uJnMkpr-Lsx3qFTyW7OVuN2TUYSJkdW">გაკვეთილი 2</li>
+      <li data-file="1cp_gfFovqZe1bZBlK4ng2O8Q_Ah5vJdi">გაკვეთილი 3</li>
+      <li data-file="1fDOZWVMOc2SBn-iAiC6-ZhOZvIIno5ur">გაკვეთილი 4</li>
     </ul>
   </div>
 
   <div id="video-container">
     <h3>შერჩეული ვიდეო</h3>
-    <video id="player" controls>
-      <source id="video-source" src="" type="video/mp4">
-      თქვენი ბრაუზერი არ უჭერს მხარს ვიდეოს ჩვენებას.
-    </video>
+    <iframe id="video-frame" src="" allowfullscreen></iframe>
   </div>
 
   <script>
-  window.onload = function () {
-    var items = document.querySelectorAll('#tree li');
-    for (var i = 0; i < items.length; i++) {
-      items[i].onclick = function () {
-        var file = this.getAttribute('data-file');
-        if (file) {
-          var encodedFile = encodeURI(file);  // fix for spaces and Georgian letters
-          var player = document.getElementById('player');
-          var source = document.getElementById('video-source');
-          source.src = encodedFile;
-          player.load();
-          player.play();
-        }
-      };
-    }
-  };
-</script>
-
+    window.onload = function () {
+      var items = document.querySelectorAll('#tree li');
+      for (var i = 0; i < items.length; i++) {
+        items[i].onclick = function () {
+          var fileId = this.getAttribute('data-file');
+          if (fileId) {
+            var url = "https://drive.google.com/file/d/" + fileId + "/preview";
+            document.getElementById('video-frame').src = url;
+          }
+        };
+      }
+    };
+  </script>
 
 </body>
 </html>
