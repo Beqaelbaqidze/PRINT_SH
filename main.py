@@ -57,6 +57,9 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         "error": "Invalid credentials"
     })
 
+@app.get("/tutorial", response_class=HTMLResponse)
+def tutorial_page(request: Request):
+    return templates.TemplateResponse("tutorial.html", {"request": request})
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <title>ვიდეოების სია</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      margin: 0;
+    }
+
+    #tree {
+      width: 20%;
+      border-right: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    #tree ul {
+      list-style: none;
+      padding-left: 10px;
+    }
+
+    #tree li {
+      cursor: pointer;
+      padding: 6px;
+    }
+
+    #tree li:hover {
+      background-color: #f0f0f0;
+    }
+
+    #video-container {
+      width: 80%;
+      padding: 20px;
+    }
+
+    video {
+      width: 100%;
+      height: calc(100vh - 100px);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="tree">
+    <h3>ვიდეოების სია</h3>
+    <ul>
+      <li data-file="0_შესავალი.mp4">შესავალი</li>
+      <li data-file="1_არქიკადიდან DXF ფაილის შექმნა და გისში შეტანა.mp4">არქიკადიდან DXF ფაილის შექმნა და გისში შეტანა - გაკვეთილი 1</li>
+      <li data-file="2_ფენების მომზადება და ატრიბუტების შევსება.mp4">ფენების მომზადება და ატრიბუტების შევსება - გაკვეთილი 2</li>
+      <li data-file="3_კოორდინირება.mp4">კოორდინირება - გაკვეთილი 3</li>
+      <li data-file="4_ნახაზის დამზადება.mp4">ნახაზის დამზადება - გაკვეთილი 4</li>
+    </ul>
+  </div>
+
+  <div id="video-container">
+    <h3>შერჩეული ვიდეო</h3>
+    <video id="player" controls>
+      <source id="video-source" src="" type="video/mp4">
+      თქვენი ბრაუზერი არ უჭერს მხარს ვიდეოს ჩვენებას.
+    </video>
+  </div>
+
+  <script>
+    window.onload = function () {
+      var items = document.querySelectorAll('#tree li');
+      for (var i = 0; i < items.length; i++) {
+        items[i].onclick = function () {
+          var file = this.getAttribute('data-file');
+          var fullPath = file ? file : "";
+          if (fullPath) {
+            var player = document.getElementById('player');
+            var source = document.getElementById('video-source');
+            source.src = fullPath;
+            player.load();
+            player.play();
+          }
+        };
+      }
+    };
+  </script>
+
+</body>
+</html>
