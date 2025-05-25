@@ -63,23 +63,24 @@
   </div>
 
   <script>
-    window.onload = function () {
-      var items = document.querySelectorAll('#tree li');
-      for (var i = 0; i < items.length; i++) {
-        items[i].onclick = function () {
-          var file = this.getAttribute('data-file');
-          var fullPath = file ? file : "";
-          if (fullPath) {
-            var player = document.getElementById('player');
-            var source = document.getElementById('video-source');
-            source.src = fullPath;
-            player.load();
-            player.play();
-          }
-        };
-      }
-    };
-  </script>
+  window.onload = function () {
+    var items = document.querySelectorAll('#tree li');
+    for (var i = 0; i < items.length; i++) {
+      items[i].onclick = function () {
+        var file = this.getAttribute('data-file');
+        if (file) {
+          var encodedFile = encodeURI(file);  // fix for spaces and Georgian letters
+          var player = document.getElementById('player');
+          var source = document.getElementById('video-source');
+          source.src = encodedFile;
+          player.load();
+          player.play();
+        }
+      };
+    }
+  };
+</script>
+
 
 </body>
 </html>
