@@ -11,6 +11,7 @@
     .modal-lg { max-width: 95%; }
     .table td input, .table td select { width: 100%; }
     .form-section { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+    .readonly { pointer-events: none; opacity: 0.6; }
   </style>
 </head>
 <body>
@@ -108,16 +109,26 @@ function loadLicenses() {
     const rows = data.map(r => `
       <tr data-id="${r.id}">
         <td>${r.id}</td><td>${r.company}</td><td>${r.director}</td><td>${r.operator}</td><td>${r.phone}</td><td>${r.serial_number}</td>
-        <td><select class="form-select form-select-sm paid"><option value="true" ${r.paid ? "selected" : ""}>Yes</option><option value="false" ${!r.paid ? "selected" : ""}>No</option></select></td>
-        <td><input type="date" class="form-control form-control-sm expire" value="${r.expire_date}" /></td>
-        <td><select class="form-select form-select-sm status"><option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option><option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option></select></td>
+        <td><select class="form-select form-select-sm paid" disabled><option value="true" ${r.paid ? "selected" : ""}>Yes</option><option value="false" ${!r.paid ? "selected" : ""}>No</option></select></td>
+        <td><input type="date" class="form-control form-control-sm expire" value="${r.expire_date}" disabled/></td>
+        <td><select class="form-select form-select-sm status" disabled><option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option><option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option></select></td>
         <td>${r.license_status}</td>
-        <td><select class="form-select form-select-sm edit_pdf"><option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option><option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option></select></td>
-        <td><button class="btn btn-success btn-sm save-license">Save</button></td>
+        <td><select class="form-select form-select-sm edit_pdf" disabled><option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option><option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option></select></td>
+        <td>
+          <button class="btn btn-warning btn-sm toggle-edit">Edit</button>
+          <button class="btn btn-success btn-sm save-license d-none">Save</button>
+        </td>
       </tr>`).join("");
     $("#licensesTable tbody").html(rows);
   });
 }
+
+$(document).on("click", ".toggle-edit", function () {
+  const row = $(this).closest("tr");
+  row.find("select, input").prop("disabled", false);
+  row.find(".toggle-edit").addClass("d-none");
+  row.find(".save-license").removeClass("d-none");
+});
 
 $(document).on("click", ".save-license", function () {
   const row = $(this).closest("tr");
@@ -129,7 +140,9 @@ $(document).on("click", ".save-license", function () {
     edit_pdf: row.find(".edit_pdf").val() === "true"
   };
   $.post({ url: "/api/update-record", contentType: "application/json", data: JSON.stringify(payload) })
-    .done(loadLicenses)
+    .done(() => {
+      loadLicenses();
+    })
     .fail(() => alert("❌ Failed to update"));
 });
 
