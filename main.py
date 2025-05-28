@@ -490,7 +490,8 @@ def autofill_from_machine(machine_name: str = Query(...)):
                    c.name AS company_name,
                    c.code AS company_id,
                    c.mobile AS phone,
-                   c.email
+                   c.email,
+                    c.address
             FROM license_records lr
             JOIN operators o ON lr.operator_fk = o.id
             JOIN companies c ON lr.company_fk = c.id
@@ -506,7 +507,7 @@ def autofill_from_machine(machine_name: str = Query(...)):
             return "❌ No active license found."
 
         # Return plain text for easy parsing in ArcMap
-        result = f"{row['company_name']}\n{row['company_id']}\n{row['measurer']}\n{row['phone']}\n{row['email']}"
+        result = f"{row['company_name']}\n{row['company_id']}\n{row['measurer']}\n{row['phone']}\n{row['email']}\n{row['address']}"
         return result
 
     except Exception as e:
