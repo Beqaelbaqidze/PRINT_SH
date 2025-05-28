@@ -166,6 +166,7 @@ class LicenseRegistration(BaseModel):
     director: str
     operator_name: str
     serial_number: str
+    mac_address: str
     paid: bool
     expire_date: date
 
@@ -209,16 +210,18 @@ def register_license(data: LicenseRegistration):
             operator_id = cursor.fetchone()[0]
 
         # --- Check or Insert Computer ---
-        cursor.execute("SELECT id FROM computers WHERE serial_number = %s", (data.serial_number,))
+        # Check or Insert Computer
+        cursor.execute("SELECT id FROM computers WHERE serial_number = %s AND mac_address = %s", (data.serial_number, data.mac_address))
         result = cursor.fetchone()
         if result:
             computer_id = result[0]
         else:
             cursor.execute("""
-                INSERT INTO computers (serial_number)
-                VALUES (%s) RETURNING id
-            """, (data.serial_number,))
+                INSERT INTO computers (serial_number, mac_address)
+                VALUES (%s, %s) RETURNING id
+            """, (data.serial_number, data.mac_address))
             computer_id = cursor.fetchone()[0]
+
 
         # --- Always Insert License (since it's unique per record) ---
         cursor.execute("""
@@ -352,7 +355,8 @@ def verify_license(
     company_name: str = Form(...),
     company_id: str = Form(...),
     measurer: str = Form(...),
-    machine_name: str = Form(...)
+    machine_name: str = Form(...),
+    mac_address: str = Form(...)
 ):
     conn = None
     cursor = None
@@ -382,9 +386,10 @@ def verify_license(
               AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
               AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
               AND LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(cmp.mac_address)) = LOWER(TRIM(%s))
               AND lr.license_status = 'active'
               AND lr.status = 'enabled'
-        """, (company_name, company_id, measurer, machine_name))
+        """, (company_name, company_id, measurer, machine_name, mac_address))
 
         result = cursor.fetchone()
         if result:
