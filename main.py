@@ -343,6 +343,9 @@ def log_request(conn, message: str, error_detail: str = None, company_name: str 
 
 
 
+from fastapi import Request, Form
+import socket
+
 @app.post("/api/verify_license")
 def verify_license(
     request: Request,
@@ -354,8 +357,13 @@ def verify_license(
     conn = None
     cursor = None
 
-    # Capture form data as a string for logging
-    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}"
+    # Extract client IP (handles proxy headers too)
+    client_ip = request.client.host
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+
+    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}, ip={client_ip}"
 
     try:
         conn = get_connection()
@@ -387,13 +395,15 @@ def verify_license(
                 "company_id": result["company_id"],
                 "measurer": result["measurer"],
                 "machine_name": result["machine_name"],
-                "edit_pdf": result["edit_pdf"]
+                "edit_pdf": result["edit_pdf"],
+                "ip_address": client_ip
             }
         else:
             log_request(conn, "❌ License verification failed", "No active license matched", company_name, machine_name, request_info)
             return {
                 "valid": False,
-                "reason": "No active license found matching the provided details."
+                "reason": "No active license found matching the provided details.",
+                "ip_address": client_ip
             }
 
     except Exception as e:
