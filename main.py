@@ -192,6 +192,12 @@ def register_license(data: LicenseRegistration):
         result = cursor.fetchone()
         if result:
             company_id = result[0]
+            # ✅ Optional: update address, email, phone, director if provided
+            cursor.execute("""
+                UPDATE companies
+                SET email = %s, mobile = %s, director = %s, address = %s
+                WHERE id = %s
+            """, (data.email, data.mobile, data.director, data.address, company_id))
         else:
             cursor.execute("""
                 INSERT INTO companies (name, code, email, mobile, director, address)
@@ -540,3 +546,69 @@ def get_logs():
             cursor.close()
         if conn:
             conn.close()
+
+editable_fields = {
+    "companies": ["name", "code", "email", "mobile", "director", "address"],
+    "operators": ["name"],
+    "computers": ["serial_number", "mac_address"]
+}
+from fastapi import Path
+
+@app.get("/api/editable/{table}")
+def get_table_rows(table: str = Path(...)):
+    if table not in editable_fields:
+        raise HTTPException(status_code=400, detail="Invalid table name")
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(f"SELECT id, {', '.join(editable_fields[table])} FROM {table} ORDER BY id")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return {"fields": editable_fields[table], "rows": rows}
+
+@app.post("/api/editable/{table}/update")
+def update_table_row(
+    table: str,
+    id: int = Body(...),
+    data: dict = Body(...)
+):
+    if table not in editable_fields:
+        raise HTTPException(status_code=400, detail="Invalid table name")
+
+    set_clause = ", ".join([f"{k} = %s" for k in data if k in editable_fields[table]])
+    values = [data[k] for k in data if k in editable_fields[table]]
+
+    if not set_clause:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(f"UPDATE {table} SET {set_clause} WHERE id = %s", values + [id])
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"message": f"{table.capitalize()} updated"}
+
+@app.post("/api/editable/{table}/insert")
+def insert_table_row(
+    table: str,
+    data: dict = Body(...)
+):
+    if table not in editable_fields:
+        raise HTTPException(status_code=400, detail="Invalid table name")
+
+    fields = [k for k in data if k in editable_fields[table]]
+    if not fields:
+        raise HTTPException(status_code=400, detail="No valid fields to insert")
+
+    placeholders = ", ".join(["%s"] * len(fields))
+    field_names = ", ".join(fields)
+    values = [data[f] for f in fields]
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(f"INSERT INTO {table} ({field_names}) VALUES ({placeholders})")
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"message": f"{table.capitalize()} row added"}
