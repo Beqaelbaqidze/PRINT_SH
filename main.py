@@ -212,16 +212,25 @@ def register_license(data: LicenseRegistration):
 
         # --- Check or Insert Computer ---
         # Check or Insert Computer
-        cursor.execute("SELECT id FROM computers WHERE serial_number = %s AND mac_address = %s", (data.serial_number, data.mac_address))
+        # Try to get existing computer by serial number
+        cursor.execute("SELECT id FROM computers WHERE serial_number = %s", (data.serial_number,))
         result = cursor.fetchone()
+
         if result:
             computer_id = result[0]
+            # Update MAC address if it's different
+            cursor.execute("""
+                UPDATE computers
+                SET mac_address = %s
+                WHERE id = %s
+            """, (data.mac_address, computer_id))
         else:
             cursor.execute("""
                 INSERT INTO computers (serial_number, mac_address)
                 VALUES (%s, %s) RETURNING id
             """, (data.serial_number, data.mac_address))
             computer_id = cursor.fetchone()[0]
+
 
 
         # --- Always Insert License (since it's unique per record) ---
