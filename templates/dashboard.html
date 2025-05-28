@@ -479,35 +479,52 @@ row.find(".edit-editpdf").val(edit_pdf ? "true" : "false");
     });
   });
 
-  $("#registerForm").on("submit", function (e) {
-    e.preventDefault();
-    const formData = Object.fromEntries(new FormData(this));
-    formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
-    formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
-    formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
-    formData.paid = formData.paid === "true";
+$("#registerForm").on("submit", function (e) {
+  e.preventDefault();
 
-    delete formData.company_name_new;
-    delete formData.operator_name_new;
-    delete formData.serial_number_new;
+  const formData = Object.fromEntries(new FormData(this));
+  
+  // Handle dynamic "new" entries
+  formData.company_name = formData.company_name === "__new__" ? formData.company_name_new : formData.company_name;
+  formData.operator_name = formData.operator_name === "__new__" ? formData.operator_name_new : formData.operator_name;
+  formData.serial_number = formData.serial_number === "__new__" ? formData.serial_number_new : formData.serial_number;
+  formData.paid = formData.paid === "true";
 
-    $.ajax({
-      url: "/api/register",
-      type: "POST",
-      contentType: "application/json",
-      data: JSON.stringify(formData),
-      success: function () {
-        alert("✅ Registered");
-        loadRecords();
-        $("#registerForm")[0].reset();
-        $("#registerModal").hide();
-        $("#companyInput, #operatorInput, #computerInput").hide();
-      },
-      error: function () {
-        alert("❌ Error");
-      }
-    });
+  // ✅ MAC address is already captured by `new FormData(this)` as long as
+  // your input name is `mac_address` like this:
+  // <input type="text" name="mac_address" required />
+
+  // Clean up unused temp fields
+  delete formData.company_name_new;
+  delete formData.operator_name_new;
+  delete formData.serial_number_new;
+
+  // Basic validation
+  if (!formData.company_name || !formData.operator_name || !formData.serial_number || !formData.expire_date || !formData.mac_address) {
+    alert("Please fill all required fields.");
+    return;
+  }
+
+  // ✅ Send the payload
+  $.ajax({
+    url: "/api/register",
+    type: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(formData),
+    success: function () {
+      alert("✅ Registered");
+      loadRecords();
+      $("#registerForm")[0].reset();
+      $("#registerModal").hide();
+      $("#companyInput, #operatorInput, #computerInput").hide();
+    },
+    error: function (xhr) {
+      alert("❌ Error: " + xhr.responseText);
+      console.log("Error detail:", xhr.responseText);
+    }
   });
+});
+
 
   $("#companySelect").change(function () {
     const selected = $(this).val();
