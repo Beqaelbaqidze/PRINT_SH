@@ -165,6 +165,7 @@ class LicenseRegistration(BaseModel):
     email: str
     mobile: str
     director: str
+    address: Optional[str] = None
     operator_name: str
     serial_number: str
     mac_address: Optional[str] = None
@@ -193,9 +194,9 @@ def register_license(data: LicenseRegistration):
             company_id = result[0]
         else:
             cursor.execute("""
-                INSERT INTO companies (name, code, email, mobile, director)
-                VALUES (%s, %s, %s, %s, %s) RETURNING id
-            """, (data.company_name, data.company_code, data.email, data.mobile, data.director))
+                INSERT INTO companies (name, code, email, mobile, director, address)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+            """, (data.company_name, data.company_code, data.email, data.mobile, data.director, data.address))
             company_id = cursor.fetchone()[0]
 
         # --- Check or Insert Operator ---
@@ -366,60 +367,57 @@ def verify_license(
     company_id: str = Form(...),
     measurer: str = Form(...),
     machine_name: str = Form(...),
-    mac_address: Optional[str] = Form(None)
+    mac_address: Optional[str] = Form(None),
+    address: Optional[str] = Form(None)
 ):
     conn = None
     cursor = None
 
-    # Extract client IP (handles proxy headers too)
+    # Extract client IP
     client_ip = request.client.host
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
         client_ip = forwarded_for.split(",")[0].strip()
 
-    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}, mac_address={mac_address}, ip={client_ip}"
-
+    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}, mac_address={mac_address}, address={address}, ip={client_ip}"
 
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        if  mac_address:
-            cursor.execute("""
-                SELECT lr.id, c.name as company_name, c.code as company_id, 
-                    o.name as measurer, cmp.serial_number as machine_name,
-                    l.edit_pdf
-                FROM license_records lr
-                JOIN companies c ON lr.company_fk = c.id
-                JOIN operators o ON lr.operator_fk = o.id
-                JOIN computers cmp ON lr.computer_fk = cmp.id
-                JOIN licenses l ON lr.license_fk = l.id
-                WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(cmp.mac_address)) = LOWER(TRIM(%s))
-                AND lr.license_status = 'active'
-                AND lr.status = 'enabled'
-            """, (company_name, company_id, measurer, machine_name, mac_address))
-        else:
-            cursor.execute("""
-                SELECT lr.id, c.name as company_name, c.code as company_id, 
-                    o.name as measurer, cmp.serial_number as machine_name,
-                    l.edit_pdf
-                FROM license_records lr
-                JOIN companies c ON lr.company_fk = c.id
-                JOIN operators o ON lr.operator_fk = o.id
-                JOIN computers cmp ON lr.computer_fk = cmp.id
-                JOIN licenses l ON lr.license_fk = l.id
-                WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
-                AND LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
-                AND lr.license_status = 'active'
-                AND lr.status = 'enabled'
-            """, (company_name, company_id, measurer, machine_name))
 
+        # Base SQL and parameters
+        sql = """
+            SELECT lr.id, c.name as company_name, c.code as company_id, 
+                   o.name as measurer, cmp.serial_number as machine_name,
+                   c.address, l.edit_pdf
+            FROM license_records lr
+            JOIN companies c ON lr.company_fk = c.id
+            JOIN operators o ON lr.operator_fk = o.id
+            JOIN computers cmp ON lr.computer_fk = cmp.id
+            JOIN licenses l ON lr.license_fk = l.id
+            WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(c.code)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(o.name)) = LOWER(TRIM(%s))
+              AND LOWER(TRIM(cmp.serial_number)) = LOWER(TRIM(%s))
+        """
+        params = [company_name, company_id, measurer, machine_name]
+
+        # Optional MAC address
+        if mac_address:
+            sql += " AND LOWER(TRIM(cmp.mac_address)) = LOWER(TRIM(%s))"
+            params.append(mac_address)
+
+        # Optional address
+        if address:
+            sql += " AND LOWER(TRIM(c.address)) = LOWER(TRIM(%s))"
+            params.append(address)
+
+        sql += " AND lr.license_status = 'active' AND lr.status = 'enabled'"
+
+        # Execute query
+        cursor.execute(sql, params)
         result = cursor.fetchone()
+
         if result:
             log_request(conn, "✅ License verified", None, result["company_name"], result["machine_name"], request_info)
             return {
@@ -429,6 +427,7 @@ def verify_license(
                 "measurer": result["measurer"],
                 "machine_name": result["machine_name"],
                 "edit_pdf": result["edit_pdf"],
+                "address": result.get("address"),
                 "ip_address": client_ip
             }
         else:
@@ -447,7 +446,6 @@ def verify_license(
             cursor.close()
         if conn:
             conn.close()
-
 
 from fastapi.responses import PlainTextResponse
 
