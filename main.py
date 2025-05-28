@@ -11,6 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="super_secret_key_123")
 
+from typing import Optional
 
 
 # CORS for frontend
