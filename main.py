@@ -377,7 +377,8 @@ def verify_license(
     if forwarded_for:
         client_ip = forwarded_for.split(",")[0].strip()
 
-    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}, ip={client_ip}"
+    request_info = f"company_name={company_name}, company_id={company_id}, measurer={measurer}, machine_name={machine_name}, mac_address={mac_address}, ip={client_ip}"
+
 
     try:
         conn = get_connection()
