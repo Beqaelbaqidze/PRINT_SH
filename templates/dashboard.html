@@ -6,18 +6,19 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <style>
     body { padding: 20px; font-family: Arial, sans-serif; background-color: #f4f6f9; }
-    .container { width: 100%; margin: auto; }
     h2 { margin-top: 20px; color: #2c3e50; }
     .tab-pane { padding-top: 20px; }
     .modal-lg { max-width: 95%; }
-    .table td input, .table td select { width: 100%; }
+    .table td input, .table td select { width: 100%; min-width: 150px; }
     .form-section { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
     .readonly { pointer-events: none; opacity: 0.6; }
     .edit-btns { display: flex; gap: 4px; }
+    .table-responsive { overflow-x: auto; }
+    .table thead th { background-color: #e9ecef; }
   </style>
 </head>
 <body>
-<div class="container">
+<div class="container-fluid">
   <h1 class="mb-4">🛠️ Admin Dashboard</h1>
   <ul class="nav nav-tabs" id="adminTab" role="tablist">
     <li class="nav-item"><button class="nav-link active" id="licenses-tab" data-bs-toggle="tab" data-bs-target="#licenses">Licenses</button></li>
@@ -29,13 +30,15 @@
   <div class="tab-content">
     <div class="tab-pane fade show active" id="licenses">
       <h2>📋 Licenses</h2>
-      <table class="table table-bordered table-sm" id="licensesTable">
-        <thead>
-          <tr><th>ID</th><th>Company</th><th>Director</th><th>Operator</th><th>Phone</th><th>Serial</th>
-          <th>Paid</th><th>Expire Date</th><th>Status</th><th>License Status</th><th>Edit PDF</th><th>Action</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="licensesTable">
+          <thead class="table-light">
+            <tr><th>ID</th><th>Company</th><th>Director</th><th>Operator</th><th>Phone</th><th>Serial</th>
+            <th>Paid</th><th>Expire Date</th><th>Status</th><th>License Status</th><th>Edit PDF</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="tables">
@@ -46,21 +49,25 @@
         <option value="computers">Computers</option>
       </select>
       <div id="tableFormContainer" class="form-section"></div>
-      <table class="table table-bordered table-sm" id="genericTable">
-        <thead><tr id="tableHead"></tr></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="genericTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="logs">
       <h2>📜 API Logs</h2>
-      <table class="table table-bordered table-sm" id="logsTable">
-        <thead><tr>
-          <th>ID</th><th>Endpoint</th><th>Method</th><th>Message</th><th>Error Detail</th>
-          <th>Company</th><th>Machine</th><th>Request Info</th><th>Time</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle table-hover" id="logsTable">
+          <thead class="table-light"><tr>
+            <th>ID</th><th>Endpoint</th><th>Method</th><th>Message</th><th>Error Detail</th>
+            <th>Company</th><th>Machine</th><th>Request Info</th><th>Time</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="tab-pane fade" id="register">
@@ -69,7 +76,6 @@
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
