@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css">
+  <style>
+    body { padding: 20px; font-family: Arial, sans-serif; background-color: #f4f6f9; }
+    h2 { margin-top: 20px; color: #2c3e50; }
+    .tab-pane { padding-top: 20px; }
+    .modal-lg { max-width: 95%; }
+    .table td input, .table td select { width: 100%; min-width: 150px; }
+    .form-section { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+    .readonly { pointer-events: none; opacity: 0.6; }
+    .edit-btns { display: flex; gap: 4px; }
+    .table-responsive { overflow-x: auto; }
+    .table thead th { background-color: #e9ecef; }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <h1 class="mb-4">🛠️ Admin Dashboard</h1>
+  <ul class="nav nav-tabs" id="adminTab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" id="licenses-tab" data-bs-toggle="tab" data-bs-target="#licenses">Licenses</button></li>
+    <li class="nav-item"><button class="nav-link" id="tables-tab" data-bs-toggle="tab" data-bs-target="#tables">Manage Tables</button></li>
+    <li class="nav-item"><button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs">Logs</button></li>
+    <li class="nav-item"><button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register">Register License</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="licenses">
+      <h2>📋 Licenses</h2>
+      <input type="text" id="searchLicenses" class="form-control mb-3" placeholder="Search licenses...">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="licensesTable">
+          <thead class="table-light">
+            <tr><th>ID</th><th>Company</th><th>Director</th><th>Operator</th><th>Phone</th><th>Serial</th>
+            <th>Paid</th><th>Expire Date</th><th>Status</th><th>License Status</th><th>Edit PDF</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="tables">
+      <h2>🧾 Manage Tables</h2>
+      <select id="tableSelect" class="form-select mb-3" style="max-width:300px">
+        <option value="companies">Companies</option>
+        <option value="operators">Operators</option>
+        <option value="computers">Computers</option>
+      </select>
+      <div id="tableFormContainer" class="form-section"></div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="genericTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="logs">
+      <h2>📜 API Logs</h2>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle table-hover" id="logsTable">
+          <thead class="table-light"><tr>
+            <th>ID</th><th>Endpoint</th><th>Method</th><th>Message</th><th>Error Detail</th>
+            <th>Company</th><th>Machine</th><th>Request Info</th><th>Time</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="register">
+      <h2>📝 Register New License</h2>
+      <div class="form-section">
+        <form id="registerForm">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <select class="form-select" name="existing_company" id="existingCompany">
+                <option value="">➕ New Company</option>
+              </select>
+              <input class="form-control mt-1" name="company_name" placeholder="Company Name (new)" />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="company_code" placeholder="Company Code" required />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="email" placeholder="Email" />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="mobile" placeholder="Phone" />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="director" placeholder="Director" />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="address" placeholder="Address" />
+            </div>
+            <div class="col-md-4">
+              <select class="form-select" name="existing_operator" id="existingOperator">
+                <option value="">➕ New Operator</option>
+              </select>
+              <input class="form-control mt-1" name="operator_name" placeholder="Operator Name (new)" />
+            </div>
+            <div class="col-md-4">
+              <select class="form-select" name="existing_computer" id="existingComputer">
+                <option value="">➕ New Computer</option>
+              </select>
+              <input class="form-control mt-1" name="serial_number" placeholder="Serial Number (new)" />
+              <input class="form-control mt-1" name="mac_address" placeholder="MAC Address" />
+            </div>
+            <div class="col-md-4">
+              <input class="form-control" name="expire_date" type="date" required />
+            </div>
+            <div class="col-md-4">
+              <select class="form-select" name="paid">
+                <option value="true">Paid</option>
+                <option value="false">Not Paid</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-4">
+            <button class="btn btn-primary" type="submit">Register</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<script>
+$(document).ready(function () {
+  toastr.options = { positionClass: 'toast-bottom-right', timeOut: 3000 };
+
+  function loadEntityDropdowns() {
+    $.get("/api/companies", data => data.forEach(c => $("#existingCompany").append(`<option value="${c.id}">${c.name}</option>`)));
+    $.get("/api/operators", data => data.forEach(o => $("#existingOperator").append(`<option value="${o.id}">${o.name}</option>`)));
+    $.get("/api/computers", data => data.forEach(c => $("#existingComputer").append(`<option value="${c.id}">${c.serial_number}</option>`)));
+  }
+
+  function loadLicenses() {
+    $.get("/api/records", function (data) {
+      const rows = data.map(r => `
+        <tr data-id="${r.id}">
+          <td>${r.id}</td><td>${r.company}</td><td>${r.director}</td><td>${r.operator}</td><td>${r.phone}</td><td>${r.serial_number}</td>
+          <td><select class="form-select form-select-sm paid" disabled><option value="true" ${r.paid ? "selected" : ""}>Yes</option><option value="false" ${!r.paid ? "selected" : ""}>No</option></select></td>
+          <td><input type="date" class="form-control form-control-sm expire" value="${r.expire_date}" disabled/></td>
+          <td><select class="form-select form-select-sm status" disabled><option value="enabled" ${r.status === "enabled" ? "selected" : ""}>enabled</option><option value="disabled" ${r.status === "disabled" ? "selected" : ""}>disabled</option></select></td>
+          <td>${r.license_status}</td>
+          <td><select class="form-select form-select-sm edit_pdf" disabled><option value="true" ${r.edit_pdf ? "selected" : ""}>Yes</option><option value="false" ${!r.edit_pdf ? "selected" : ""}>No</option></select></td>
+          <td class="edit-btns">
+            <button class="btn btn-warning btn-sm toggle-edit">Edit</button>
+            <button class="btn btn-success btn-sm save-license d-none">Save</button>
+          </td>
+        </tr>`).join("");
+      $("#licensesTable tbody").html(rows);
+    });
+  }
+
+  function loadLogs() {
+    $.get("/api/logs", function (res) {
+      const rows = res.logs.map(log => `
+        <tr><td>${log.id}</td><td>${log.endpoint}</td><td>${log.method}</td><td>${log.message}</td><td>${log.error_detail}</td>
+            <td>${log.company_name}</td><td>${log.machine_name}</td><td>${log.request_info}</td><td>${new Date(log.created_at).toLocaleString()}</td></tr>`).join("");
+      $("#logsTable tbody").html(rows);
+    });
+  }
+
+  function loadGenericTable(name) {
+    $.get(`/api/${name}`, function (data) {
+      if (!data.length) return;
+      const headers = Object.keys(data[0]);
+      $("#genericTable").show();
+      $("#tableHead").html(headers.map(h => `<th>${h}</th>`).join('') + '<th>Action</th>');
+      $("#tableBody").html(data.map(row => {
+        const rowHTML = headers.map(h => `<td><input class="form-control form-control-sm" value="${row[h] || ''}" data-key="${h}"/></td>`).join('');
+        return `<tr data-id="${row.id}">${rowHTML}<td><button class="btn btn-sm btn-primary save-row">Save</button></td></tr>`;
+      }).join(""));
+    });
+  }
+
+  $("#tableSelect").on("change", function () {
+    const table = $(this).val();
+    loadGenericTable(table);
+  });
+
+  $(document).on("click", ".toggle-edit", function () {
+    const row = $(this).closest("tr");
+    row.find("select, input").prop("disabled", false);
+    row.find(".toggle-edit").addClass("d-none");
+    row.find(".save-license").removeClass("d-none");
+  });
+
+  $(document).on("click", ".save-license", function () {
+    const row = $(this).closest("tr");
+    const payload = {
+      record_id: row.data("id"),
+      paid: row.find(".paid").val() === "true",
+      expire_date: row.find(".expire").val(),
+      status: row.find(".status").val(),
+      edit_pdf: row.find(".edit_pdf").val() === "true"
+    };
+    $.post({ url: "/api/update-record", contentType: "application/json", data: JSON.stringify(payload) })
+      .done(() => { toastr.success("License updated"); loadLicenses(); })
+      .fail(() => toastr.error("❌ Failed to update"));
+  });
+
+  $(document).on("click", ".save-row", function () {
+    const row = $(this).closest("tr");
+    const payload = {};
+    row.find("input").each(function () {
+      payload[$(this).data("key")] = $(this).val();
+    });
+    payload.id = row.data("id");
+    const table = $("#tableSelect").val();
+    $.post({ url: `/api/${table}/update`, contentType: "application/json", data: JSON.stringify(payload) })
+      .done(() => { toastr.success("Table updated"); loadGenericTable(table); })
+      .fail(() => toastr.error("❌ Update failed"));
+  });
+
+  $("#registerForm").on("submit", async function (e) {
+    e.preventDefault();
+    const form = $(this).serializeArray();
+    const data = {};
+    form.forEach(({ name, value }) => {
+      data[name] = name === "paid" ? value === "true" : value;
+    });
+
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toastr.success("✅ License registered successfully!");
+        this.reset();
+        loadLicenses();
+      } else {
+        toastr.error("❌ " + result.detail);
+      }
+    } catch (err) {
+      toastr.error("❌ Network error: " + err.message);
+    }
+  });
+
+  $("#searchLicenses").on("input", function () {
+    const q = $(this).val().toLowerCase();
+    $("#licensesTable tbody tr").each(function () {
+      $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
+    });
+  });
+
+  loadLicenses();
+  loadLogs();
+  loadEntityDropdowns();
+});
+</script>
+</body>
+</html>

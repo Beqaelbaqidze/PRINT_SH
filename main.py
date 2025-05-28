@@ -612,3 +612,16 @@ def insert_table_row(
     cur.close()
     conn.close()
     return {"message": f"{table.capitalize()} row added"}
+
+@app.delete("/api/editable/{table}/{id}")
+def delete_table_row(table: str, id: int = Path(...)):
+    if table not in editable_fields:
+        raise HTTPException(status_code=400, detail="Invalid table name")
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(f"DELETE FROM {table} WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"message": f"{table.capitalize()} entry deleted"}
